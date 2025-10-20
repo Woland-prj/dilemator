@@ -33,4 +33,3 @@ vendor/
 coverage.txt
 
 web/node_modules
-web/public
