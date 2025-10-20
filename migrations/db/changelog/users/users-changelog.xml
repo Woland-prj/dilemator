@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1-create-users-table"
+               author="Woland-prj">
+        <createTable tableName="users">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(100)">
+                <constraints unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(256)" />
+            <column name="tg_id" type="BIGINT">
+                <constraints unique="true" />
+            </column>
+        </createTable>
+        <createIndex indexName="idx_users_tg_id"
+                     tableName="users">
+            <column name="tg_id"/>
+        </createIndex>
+        <createIndex indexName="idx_users_email"
+                     tableName="users">
+            <column name="email"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="2-add-profile-table"
+               author="Woland-prj">
+        <createTable tableName="user_profile">
+            <column name="user_id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(80)" />
+            <column name="surname" type="VARCHAR(80)" />
+            <column name="avatar" type="TEXT" />
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

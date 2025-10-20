@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1-create-dilemma-table"
+               author="Woland-prj">
+        <createTable tableName="dilemmas">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="owner_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="topic" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="root_node_id" type="UUID">
+                <constraints unique="true" nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_dilemmas_owner_id"
+                     tableName="dilemmas">
+            <column name="owner_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="2-create-nodes-table"
+               author="Woland-prj">
+        <createTable tableName="dilemma_nodes">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="value" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="node_children">
+            <column name="node_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="child_id" type="UUID">
+                <constraints unique="true" nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="node_children"
+                       columnNames="node_id, child_id"
+                       constraintName="pk_node_children"/>
+        <createIndex indexName="idx_node_children_node_id" tableName="node_children">
+            <column name="node_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="3-add-foreign-keys"
+               author="Woland-prj">
+        <!-- dilemmas.root_node_id → dilemma_nodes.id -->
+        <addForeignKeyConstraint
+                constraintName="fk_dilemmas_root_node"
+                baseTableName="dilemmas"
+                baseColumnNames="root_node_id"
+                referencedTableName="dilemma_nodes"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+
+        <!-- node_children.node_id → dilemma_nodes.id -->
+        <addForeignKeyConstraint
+                constraintName="fk_node_children_node"
+                baseTableName="node_children"
+                baseColumnNames="node_id"
+                referencedTableName="dilemma_nodes"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+
+        <!-- node_children.child_id → dilemma_nodes.id -->
+        <addForeignKeyConstraint
+                constraintName="fk_node_children_child"
+                baseTableName="node_children"
+                baseColumnNames="child_id"
+                referencedTableName="dilemma_nodes"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+    </changeSet>
+</databaseChangeLog>

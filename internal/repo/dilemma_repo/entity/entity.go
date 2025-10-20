@@ -1,0 +1,75 @@
+package entity
+
+import (
+	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
+	"github.com/google/uuid"
+)
+
+const (
+	DilemmaTableName     = "dilemmas"
+	DilemmaNodeTableName = "dilemma_nodes"
+	NodeChildrenTable    = "node_children"
+)
+
+// DilemmaEntity — GORM-сущность для таблицы dilemmas
+type DilemmaEntity struct {
+	ID         uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
+	OwnerID    uuid.UUID `gorm:"column:owner_id;type:uuid;not null"`
+	Topic      string    `gorm:"column:topic;type:varchar(256);not null"`
+	RootNodeID uuid.UUID `gorm:"column:root_node_id;type:uuid;not null;uniqueIndex"`
+
+	RootNode *DilemmaNodeEntity `gorm:"foreignKey:ID;references:RootNodeID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+func (*DilemmaEntity) TableName() string {
+	return DilemmaTableName
+}
+
+// ToModel преобразует GORM-сущность в доменную
+func (e *DilemmaEntity) ToModel() *dilemma_entity.Dilemma {
+	return &dilemma_entity.Dilemma{
+		ID:       e.ID,
+		OwnerID:  e.OwnerID,
+		Topic:    e.Topic,
+		RootNode: e.RootNode.ToModel(),
+	}
+}
+
+// DilemmaEntityFromModel создаёт GORM-сущность из доменной
+func DilemmaEntityFromModel(d *dilemma_entity.Dilemma) *DilemmaEntity {
+	rootNodeEnt := DilemmaNodeEntityFromModel(d.RootNode)
+	return &DilemmaEntity{
+		ID:         d.ID,
+		OwnerID:    d.OwnerID,
+		Topic:      d.Topic,
+		RootNodeID: d.RootNode.ID,
+		RootNode:   rootNodeEnt,
+	}
+}
+
+// DilemmaNodeEntity — GORM-сущность для таблицы dilemma_nodes
+type DilemmaNodeEntity struct {
+	ID    uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
+	Value string    `gorm:"column:value;type:text;not null"`
+
+	// Связь "один ко многим" через join-таблицу node_children
+	Children []*DilemmaNodeEntity `gorm:"many2many:node_children;joinForeignKey:node_id;joinReferences:child_id;constraint:OnDelete:CASCADE"`
+}
+
+func (*DilemmaNodeEntity) TableName() string {
+	return DilemmaNodeTableName
+}
+
+func (e *DilemmaNodeEntity) ToModel() *dilemma_entity.DilemmaNode {
+	return &dilemma_entity.DilemmaNode{
+		ID:    e.ID,
+		Value: e.Value,
+	}
+}
+
+func DilemmaNodeEntityFromModel(n *dilemma_entity.DilemmaNode) *DilemmaNodeEntity {
+	return &DilemmaNodeEntity{
+		ID:    n.ID,
+		Value: n.Value,
+	}
+}

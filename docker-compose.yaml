@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    env_file:
+      - .env.example
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
+    container_name: local-minio
+    ports:
+      - "9900:9000"    # API
+      - "9901:9001"    # Web-console
+    env_file:
+      - .env.example
+    command: [ "server", "--console-address", ":9001", "/data" ]
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-net
+
+  createbuckets:
+    image: quay.io/minio/mc:RELEASE.2025-03-12T17-29-24Z
+    depends_on:
+      - minio
+    restart: on-failure
+    env_file:
+      - .env.example
+    entrypoint: |
+      /bin/sh -c '
+      sleep 5
+      mc alias set dockerminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}
+      mc mb dockerminio/$${MINIO_BUCKET} || true
+      mc mb dockerminio/$${S3_BACKUP_BUCKET} || true
+      mc anonymous set download dockerminio/$${MINIO_BUCKET}
+      '
+    networks:
+      - app-net
+    
+  liquibase:
+    image: liquibase/liquibase
+    env_file: .env.example
+    volumes:
+      - ./migrations/db/changelog:/liquibase/changelog
+      - ./migrations/db/lib:/liquibase/lib
+    command: >
+      /bin/sh -c '
+      liquibase
+      --driver=org.postgresql.Driver
+      --url="jdbc:postgresql://postgres:5432/$$POSTGRES_DB"
+      --username="$$POSTGRES_USER"
+      --password="$$POSTGRES_PASSWORD"
+      --changeLogFile=db.changelog-master.xml
+      --classpath=/liquibase/lib/postgresql-42.7.7.jar
+      --searchPath=/liquibase/changelog
+      update
+      '
+    networks:
+      - app-net
+
+  backup_s3:
+    image: giashka/giashka:backuper
+    restart: "no"
+    env_file:
+      - .env.example
+    environment:
+      POSTGRES_HOST: postgres
+      S3_ENDPOINT: http://minio:9000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - app-net
+
+volumes:
+  minio_data:
+  pg_data:
+
+networks:
+  app-net:

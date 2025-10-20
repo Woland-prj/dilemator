@@ -1,0 +1,9 @@
+basePath: /.
+host: dilemator.wwoland.ru
+info:
+  contact: {}
+  description: API for dilemator.wwoland.ru
+  title: Giashka Go API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

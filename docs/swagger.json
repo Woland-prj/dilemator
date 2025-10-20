@@ -1,0 +1,12 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for dilemator.wwoland.ru",
+        "title": "Giashka Go API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "dilemator.wwoland.ru",
+    "basePath": "/.",
+    "paths": {}
+}

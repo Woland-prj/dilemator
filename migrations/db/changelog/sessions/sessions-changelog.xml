@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1-create-sessions-table-and-indexes"
+               author="Woland-prj">
+        <createTable tableName="sessions">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="session_token" type="TEXT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="user_agent" type="TEXT"/>
+            <column name="ip_address" type="INET"/>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false" />
+            </column>
+            <column name="expires_at" type="TIMESTAMPTZ">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_used_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_revoked" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="device_name" type="TEXT"/>
+        </createTable>
+        <addForeignKeyConstraint
+                constraintName="fk_sessions_user_id"
+                baseTableName="sessions"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                onUpdate="NO ACTION"/>
+        <createIndex indexName="idx_sessions_user_id" tableName="sessions">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_sessions_expires_at" tableName="sessions">
+            <column name="expires_at"/>
+        </createIndex>
+        <createIndex indexName="idx_sessions_session_token" tableName="sessions">
+            <column name="session_token"/>
+        </createIndex>
+        <createIndex indexName="idx_sessions_last_used_at" tableName="sessions">
+            <column name="last_used_at"/>
+        </createIndex>
+        <createIndex indexName="idx_sessions_user_active" tableName="sessions">
+            <column name="user_id"/>
+            <column name="is_revoked"/>
+            <column name="expires_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
