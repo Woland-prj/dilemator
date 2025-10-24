@@ -11,29 +11,22 @@ import (
 
 const AuthContextKey = "requester"
 
-type HandlerConfig struct {
-	RequiredRoles []string
-}
-
-func HandlerConf(roles ...string) HandlerConfig {
-	return HandlerConfig{
-		RequiredRoles: roles,
-	}
-}
-
 type authHandler struct {
 	cookieManager *managers.CookieManager
-	handlerConfig HandlerConfig
 }
 
 func (h *authHandler) Handle(c *fiber.Ctx) error {
 	userDetails, err := h.cookieManager.VerifyCookie(c)
 	if err != nil {
 		if errors.Is(err, managers.ErrNoCookiePresent) || errors.Is(err, managers.ErrInvalidTokenFormat) {
+			c.Set("HX-Redirect", "/login")
+
 			return responses.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
 		}
 
 		if errors.Is(err, managers.ErrInvalidSession) {
+			c.Set("HX-Redirect", "/login")
+
 			return responses.ErrorResponse(c, http.StatusForbidden, "FORBIDDEN", err.Error())
 		}
 
@@ -46,8 +39,8 @@ func (h *authHandler) Handle(c *fiber.Ctx) error {
 }
 
 // WithAuth creates middleware to auth check.
-func WithAuth(cfg HandlerConfig, cookieManager *managers.CookieManager) fiber.Handler {
-	handler := &authHandler{handlerConfig: cfg, cookieManager: cookieManager}
+func WithAuth(cookieManager *managers.CookieManager) fiber.Handler {
+	handler := &authHandler{cookieManager: cookieManager}
 
 	return func(c *fiber.Ctx) error {
 		return handler.Handle(c)

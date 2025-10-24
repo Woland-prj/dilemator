@@ -1,0 +1,22 @@
+package layout
+
+type SimpleProps struct {
+	Title string
+}
+
+templ Simple(props SimpleProps) {
+	<!DOCTYPE html>
+	<html data-theme="cupcake" lang="en">
+		<head>
+			<title>{ props.Title }</title>
+			<link rel="stylesheet" href="/assets/main.css"/>
+			<link rel="icon" href="/assets/favicon.ico" type="image/x-icon"/>
+		</head>
+		<body>
+			<div id="content-container">
+				{ children... }
+			</div>
+			<script src="/assets/main.js"></script>
+		</body>
+	</html>
+}

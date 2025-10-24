@@ -8,11 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -destination=mock_sessions.go -package security . DilemmaService
+//go:generate mockgen -destination=mock_service.go -package dilemma_service . DilemmaService
 
 type DilemmaService interface {
 	CreateDilemma(ctx context.Context, req *dilemma_dto.CreateDilemmaDto) (*dilemma_entity.Dilemma, error)
 	GetByID(ctx context.Context, dilemmaID uuid.UUID) (*dilemma_entity.Dilemma, error)
+	GetByOwner(ctx context.Context, ownerID uuid.UUID, page, size int) ([]dilemma_entity.Dilemma, error)
 	UpdateDilemma(ctx context.Context, req *dilemma_dto.UpdateDilemmaDto) (*dilemma_entity.Dilemma, error)
 	DeleteDilemma(ctx context.Context, dilemmaID uuid.UUID) error
 

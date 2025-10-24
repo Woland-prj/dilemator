@@ -9,6 +9,8 @@ import (
 
 	"github.com/Woland-prj/dilemator/config"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
+	"github.com/Woland-prj/dilemator/internal/router/handlers/api/dilemma_router"
+	"github.com/Woland-prj/dilemator/internal/router/handlers/api/sessions_router"
 	"github.com/Woland-prj/dilemator/internal/router/handlers/api/users_router"
 	"github.com/Woland-prj/dilemator/internal/router/handlers/pages_router"
 	"github.com/Woland-prj/dilemator/internal/router/managers"
@@ -91,15 +93,27 @@ func mustRegisterRoutes(
 ) {
 	const op = "app - mustRegisterRoutes"
 
-	httpRouter := router_setup.NewRouter(httpServer.App, cfg, log)
+	apiRouter, componentsRouter := router_setup.NewRouter(httpServer.App, cfg, log)
 
-	err := users_router.Register(httpRouter, f, cm, log)
+	err := users_router.Register(apiRouter, componentsRouter, f, cm, log)
 	if err != nil {
 		log.Error(berrors.FromErr(op, err).Error())
 		os.Exit(1)
 	}
 
-	err = pages_router.Register(httpRouter, log)
+	err = dilemma_router.Register(apiRouter, componentsRouter, f, cm, log)
+	if err != nil {
+		log.Error(berrors.FromErr(op, err).Error())
+		os.Exit(1)
+	}
+
+	err = sessions_router.Register(apiRouter, f, cm, log)
+	if err != nil {
+		log.Error(berrors.FromErr(op, err).Error())
+		os.Exit(1)
+	}
+
+	err = pages_router.Register(httpServer.App, log, cfg.App.TgBotName)
 	if err != nil {
 		log.Error(berrors.FromErr(op, err).Error())
 		os.Exit(1)

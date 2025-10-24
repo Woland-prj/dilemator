@@ -8,11 +8,10 @@ import (
 const ProfileTableName = "user_profile"
 
 type ProfileEntity struct {
-	UserID     uuid.UUID `gorm:"primaryKey;column:user_id"`
-	Name       *string   `gorm:"column:name"`
-	Surname    *string   `gorm:"column:surname"`
-	Patronymic *string   `gorm:"column:patronymic"`
-	Avatar     *string   `gorm:"column:avatar"`
+	UserID  uuid.UUID `gorm:"primaryKey;column:user_id"`
+	Name    *string   `gorm:"column:name"`
+	Surname *string   `gorm:"column:surname"`
+	Avatar  *string   `gorm:"column:avatar"`
 }
 
 func (*ProfileEntity) TableName() string {

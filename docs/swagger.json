@@ -8,5 +8,154 @@
     },
     "host": "dilemator.wwoland.ru",
     "basePath": "/.",
-    "paths": {}
+    "paths": {
+        "/auth/login/tg": {
+            "post": {
+                "description": "Authenticates user via telegram widget",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth-controller"
+                ],
+                "summary": "User login via telegram widget API",
+                "operationId": "loginByTelegram",
+                "parameters": [
+                    {
+                        "description": "Tg auth data",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.TgLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successfully authenticated, session cookie set"
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "User with this id not found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Data not from telegram or tg login expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Revokes current session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth-controller"
+                ],
+                "summary": "User logout",
+                "operationId": "logoutUser",
+                "responses": {
+                    "204": {
+                        "description": "Successfully logged out, session cookie cleared"
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "requests.TgLogin": {
+            "type": "object",
+            "properties": {
+                "auth_date": {
+                    "$ref": "#/definitions/requests.UnixTime"
+                },
+                "checkString": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.UnixTime": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.Error": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "error": {
+                    "type": "string",
+                    "example": "NOT_FOUND"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Something Not Found"
+                },
+                "path": {
+                    "type": "string",
+                    "example": "/api/target/resource"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 404
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2025-07-24T09:51:43"
+                }
+            }
+        }
+    }
 }

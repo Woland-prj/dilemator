@@ -11,7 +11,7 @@ const (
 	NodeChildrenTable    = "node_children"
 )
 
-// DilemmaEntity — GORM-сущность для таблицы dilemmas
+// DilemmaEntity — GORM-сущность для таблицы dilemmas.
 type DilemmaEntity struct {
 	ID         uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
 	OwnerID    uuid.UUID `gorm:"column:owner_id;type:uuid;not null"`
@@ -25,7 +25,7 @@ func (*DilemmaEntity) TableName() string {
 	return DilemmaTableName
 }
 
-// ToModel преобразует GORM-сущность в доменную
+// ToModel преобразует GORM-сущность в доменную.
 func (e *DilemmaEntity) ToModel() *dilemma_entity.Dilemma {
 	return &dilemma_entity.Dilemma{
 		ID:       e.ID,
@@ -35,9 +35,10 @@ func (e *DilemmaEntity) ToModel() *dilemma_entity.Dilemma {
 	}
 }
 
-// DilemmaEntityFromModel создаёт GORM-сущность из доменной
+// DilemmaEntityFromModel создаёт GORM-сущность из доменной.
 func DilemmaEntityFromModel(d *dilemma_entity.Dilemma) *DilemmaEntity {
 	rootNodeEnt := DilemmaNodeEntityFromModel(d.RootNode)
+
 	return &DilemmaEntity{
 		ID:         d.ID,
 		OwnerID:    d.OwnerID,
@@ -47,7 +48,7 @@ func DilemmaEntityFromModel(d *dilemma_entity.Dilemma) *DilemmaEntity {
 	}
 }
 
-// DilemmaNodeEntity — GORM-сущность для таблицы dilemma_nodes
+// DilemmaNodeEntity — GORM-сущность для таблицы dilemma_nodes.
 type DilemmaNodeEntity struct {
 	ID    uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
 	Value string    `gorm:"column:value;type:text;not null"`
@@ -72,4 +73,13 @@ func DilemmaNodeEntityFromModel(n *dilemma_entity.DilemmaNode) *DilemmaNodeEntit
 		ID:    n.ID,
 		Value: n.Value,
 	}
+}
+
+func ToModelList(entities []*DilemmaEntity) []dilemma_entity.Dilemma {
+	result := make([]dilemma_entity.Dilemma, 0, len(entities))
+	for _, e := range entities {
+		result = append(result, *e.ToModel())
+	}
+
+	return result
 }

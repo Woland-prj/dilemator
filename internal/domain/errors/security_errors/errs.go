@@ -9,4 +9,5 @@ var (
 	ErrDataNotFromLoginSource  = errors.New("data not from login source")
 	ErrExternalLoginExpired    = errors.New("external login is expired")
 	ErrSessionAlreadyExists    = errors.New("session already exists")
+	ErrSession                 = errors.New("session is invalid")
 )

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Woland-prj/dilemator/internal/domain/entity/security_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
+	"github.com/Woland-prj/dilemator/internal/domain/errors/security_errors"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/user_errors"
 	"github.com/Woland-prj/dilemator/internal/router/managers"
 	"github.com/Woland-prj/dilemator/internal/router/middleware"
@@ -21,7 +22,8 @@ import (
 
 // Register - register user routes for fiber app router.
 func Register(
-	router fiber.Router,
+	apiRouter fiber.Router,
+	componentsRouter fiber.Router,
 	f *factory.ServiceFactory,
 	cm *managers.CookieManager,
 	l logger.Interface,
@@ -39,13 +41,14 @@ func Register(
 		v: validator.New(validator.WithRequiredStructEnabled()),
 	}
 
-	userGroup := router.Group("/user")
+	userAPIGroup := apiRouter.Group("/user")
 	{
-		userGroup.Post("/register", c.register)
-		userGroup.Get("/me",
-			middleware.WithAuth(middleware.HandlerConf(), cm),
-			c.profile,
-		)
+		userAPIGroup.Post("/register", c.register)
+	}
+
+	userComponentsGroup := componentsRouter.Group("/user")
+	{
+		userComponentsGroup.Get("/profilebage", middleware.WithAuth(cm), c.profileBadge)
 	}
 
 	return nil
@@ -108,20 +111,21 @@ func (c *UserController) register(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(http.StatusCreated)
 }
 
-func (c *UserController) profile(ctx *fiber.Ctx) error {
+func (c *UserController) profileBadge(ctx *fiber.Ctx) error {
 	requester, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
 	if !ok {
-		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+		return ui.ErrorBlock(security_errors.ErrSession).Render(ctx.Context(), ctx)
 	}
-
-	c.l.Debug("requester:", requester.GetUsername())
 
 	user, err := c.s.GetByID(ctx.Context(), requester.GetID())
 	if err != nil {
-		if errors.Is(err, user_errors.ErrUserNotFound) {
-			return responses.ErrorResponse(ctx, http.StatusNotFound, "NOT_FOUND", err.Error())
-		}
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusInternalServerError,
+			"INTERNAL_SERVER_ERROR",
+			"internal server error",
+		)
 	}
 
-	return ui.ProfileCard(*user).Render(ctx.Context(), ctx)
+	return ui.ProfileBage(*user).Render(ctx.Context(), ctx)
 }

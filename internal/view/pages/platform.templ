@@ -1,11 +1,15 @@
-
 package pages
 
 import "github.com/Woland-prj/dilemator/internal/view/layout"
+import "github.com/Woland-prj/dilemator/internal/view/ui"
 
-templ Platform() {
-	@layout.Base(layout.BaseProps{Title: "Platform page"}) {
-		<h1>Platform page</h1>
-		<div class="container mx-auto py-4"></div>
+templ Platform(menu ui.MenuProps) {
+	@layout.Base(layout.BaseProps{Title: "Platform page", Menu: menu}) {
+		<div
+			class="container mx-auto md:px-20"
+			hx-get="/components/dilemma/dashboard"
+			hx-swap="innerHTML"
+			hx-trigger="load"
+		></div>
 	}
 }

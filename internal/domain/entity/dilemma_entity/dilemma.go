@@ -14,10 +14,10 @@ type DilemmaNode struct {
 	Value string
 }
 
-func NewDilemma(ID uuid.UUID, OwnerID uuid.UUID, Topic string, RootNode *DilemmaNode) *Dilemma {
-	return &Dilemma{ID: ID, OwnerID: OwnerID, Topic: Topic, RootNode: RootNode}
+func NewDilemma(id, ownerID uuid.UUID, topic string, rootNode *DilemmaNode) *Dilemma {
+	return &Dilemma{ID: id, OwnerID: ownerID, Topic: topic, RootNode: rootNode}
 }
 
-func NewDilemmaNode(id uuid.UUID, Value string) *DilemmaNode {
-	return &DilemmaNode{ID: id, Value: Value}
+func NewDilemmaNode(id uuid.UUID, value string) *DilemmaNode {
+	return &DilemmaNode{ID: id, Value: value}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -destination=mock_sessions.go -package security . SessionService
+//go:generate mockgen -destination=mock_service.go -package sessions_service . SessionService
 
 type SessionService interface {
 	Get(ctx context.Context, id uuid.UUID) (*security_entity.Session, error)

@@ -15,6 +15,7 @@
 *.so
 *.dylib
 bin/
+build
 bin
 
 # Logs
@@ -33,3 +34,5 @@ vendor/
 coverage.txt
 
 web/node_modules
+web/public/assets/main.js
+web/public/assets/main.css

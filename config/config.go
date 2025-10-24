@@ -24,6 +24,7 @@ type (
 		Version    string `env:"APP_VERSION,required"`
 		PassCost   int    `env:"APP_PASS_COST" envDefault:"10"`
 		TgBotToken string `env:"APP_TG_BOT_TOKEN,required"`
+		TgBotName  string `env:"APP_TG_BOT_NAME,required"`
 	}
 
 	// HTTP -.

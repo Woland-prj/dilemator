@@ -30,7 +30,7 @@ func NewDilemmaService(
 	}
 }
 
-// CreateDilemma создаёт новую дилемму с корневым узлом
+// CreateDilemma создаёт новую дилемму с корневым узлом.
 func (s *dilemmaService) CreateDilemma(
 	ctx context.Context,
 	req *dilemma_dto.CreateDilemmaDto,
@@ -43,19 +43,21 @@ func (s *dilemmaService) CreateDilemma(
 	// Сохраняем корневой узел
 	if err := s.repo.SaveNode(ctx, rootNode); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to save root node: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	// Сохраняем дилемму (ссылается на root_node_id)
 	if err := s.repo.SaveDilemmaDescriber(ctx, dilemma); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to save dilemma: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return dilemma, nil
 }
 
-// GetByID возвращает полную дилемму (без рекурсивной загрузки дерева — только корень)
+// GetByID возвращает полную дилемму (без рекурсивной загрузки дерева — только корень).
 func (s *dilemmaService) GetByID(
 	ctx context.Context,
 	dilemmaID uuid.UUID,
@@ -68,15 +70,33 @@ func (s *dilemmaService) GetByID(
 	if err != nil {
 		if errors.Is(err, dilemma_errors.ErrDilemmaNotFound) {
 			s.log.Debug(fmt.Sprintf("%s: dilemma %s not found", op, dilemmaID))
+
 			return nil, berrors.Wrap(op, fmt.Sprintf("dilemma %s not found", dilemmaID), err)
 		}
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return dilemma, nil
 }
 
-// UpdateDilemma обновляет тему дилеммы и значение корневого узла
+// GetByOwner ищет все дилеммы по ID пользователя.
+func (s *dilemmaService) GetByOwner(
+	ctx context.Context,
+	ownerID uuid.UUID,
+	page, size int,
+) ([]dilemma_entity.Dilemma, error) {
+	const op = "dilemma - dilemmaService - GetByOwner"
+
+	dilemmas, err := s.repo.GetDilemmasByOwner(ctx, ownerID, page, size)
+	if err != nil {
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	return dilemmas, nil
+}
+
+// UpdateDilemma обновляет тему дилеммы и значение корневого узла.
 func (s *dilemmaService) UpdateDilemma(
 	ctx context.Context,
 	req *dilemma_dto.UpdateDilemmaDto,
@@ -93,6 +113,7 @@ func (s *dilemmaService) UpdateDilemma(
 	existing.RootNode.Value = req.RootValue
 	if err := s.repo.SaveNode(ctx, existing.RootNode); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to update root node: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
@@ -100,13 +121,14 @@ func (s *dilemmaService) UpdateDilemma(
 	existing.Topic = req.Topic
 	if err := s.repo.SaveDilemmaDescriber(ctx, existing); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to update dilemma: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return existing, nil
 }
 
-// DeleteDilemma удаляет дилемму (каскадное удаление узлов обеспечивается БД)
+// DeleteDilemma удаляет дилемму (каскадное удаление узлов обеспечивается БД).
 func (s *dilemmaService) DeleteDilemma(
 	ctx context.Context,
 	dilemmaID uuid.UUID,
@@ -116,15 +138,17 @@ func (s *dilemmaService) DeleteDilemma(
 	if err := s.repo.DeleteDilemma(ctx, dilemmaID); err != nil {
 		if errors.Is(err, dilemma_errors.ErrDilemmaNotFound) {
 			s.log.Debug(fmt.Sprintf("%s: dilemma %s not found", op, dilemmaID))
+
 			return berrors.Wrap(op, fmt.Sprintf("dilemma %s not found", dilemmaID), err)
 		}
+
 		return berrors.InternalFromErr(op, err)
 	}
 
 	return nil
 }
 
-// CreateDilemmaNode создаёт новый узел и связывает его с родителем через node_children
+// CreateDilemmaNode создаёт новый узел и связывает его с родителем через node_children.
 func (s *dilemmaService) CreateDilemmaNode(
 	ctx context.Context,
 	req *dilemma_dto.CreateDilemmaNodeDto,
@@ -141,18 +165,20 @@ func (s *dilemmaService) CreateDilemmaNode(
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to save node: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	if err := s.repo.LinkParentChild(ctx, req.ParentID, node.ID); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to link parent-child: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return node, nil
 }
 
-// GetNodeByID возвращает узел по ID
+// GetNodeByID возвращает узел по ID.
 func (s *dilemmaService) GetNodeByID(
 	ctx context.Context,
 	nodeID uuid.UUID,
@@ -163,15 +189,17 @@ func (s *dilemmaService) GetNodeByID(
 	if err != nil {
 		if errors.Is(err, dilemma_errors.ErrNodeNotFound) {
 			s.log.Debug(fmt.Sprintf("%s: node %s not found", op, nodeID))
+
 			return nil, berrors.Wrap(op, fmt.Sprintf("node %s not found", nodeID), err)
 		}
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return node, nil
 }
 
-// GetChildren возвращает дочерние узлы для parentID
+// GetChildren возвращает дочерние узлы для parentID.
 func (s *dilemmaService) GetChildren(
 	ctx context.Context,
 	parentID uuid.UUID,
@@ -184,13 +212,14 @@ func (s *dilemmaService) GetChildren(
 			// Родитель может не иметь детей — это не ошибка
 			return []*dilemma_entity.DilemmaNode{}, nil
 		}
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return children, nil
 }
 
-// UpdateDilemmaNode обновляет значение узла
+// UpdateDilemmaNode обновляет значение узла.
 func (s *dilemmaService) UpdateDilemmaNode(
 	ctx context.Context,
 	req dilemma_dto.UpdateDilemmaNodeDto,
@@ -206,13 +235,14 @@ func (s *dilemmaService) UpdateDilemmaNode(
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to update node: %v", op, err))
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return node, nil
 }
 
-// DeleteDilemmaNode удаляет узел (и всё поддерево, если БД поддерживает CASCADE)
+// DeleteDilemmaNode удаляет узел (и всё поддерево, если БД поддерживает CASCADE).
 func (s *dilemmaService) DeleteDilemmaNode(
 	ctx context.Context,
 	nodeID uuid.UUID,
@@ -222,8 +252,10 @@ func (s *dilemmaService) DeleteDilemmaNode(
 	if err := s.repo.DeleteNode(ctx, nodeID); err != nil {
 		if errors.Is(err, dilemma_errors.ErrNodeNotFound) {
 			s.log.Debug(fmt.Sprintf("%s: node %s not found", op, nodeID))
+
 			return berrors.Wrap(op, fmt.Sprintf("node %s not found", nodeID), err)
 		}
+
 		return berrors.InternalFromErr(op, err)
 	}
 

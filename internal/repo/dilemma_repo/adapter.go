@@ -26,9 +26,9 @@ func NewDilemmaRepositoryAdapter(pg *postgres.Postgres) *DilemmaRepositoryAdapte
 	}
 }
 
-// SaveDilemmaDescriber сохраняет дилемму (без рекурсивного сохранения узлов)
+// SaveDilemmaDescriber сохраняет дилемму (без рекурсивного сохранения узлов).
 func (r *DilemmaRepositoryAdapter) SaveDilemmaDescriber(ctx context.Context, dilemma *dilemma_entity.Dilemma) error {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - SaveDilemmaDescriber"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - SaveDilemmaDescriber"
 
 	dilemmaEnt := pentity.DilemmaEntityFromModel(dilemma)
 
@@ -36,48 +36,78 @@ func (r *DilemmaRepositoryAdapter) SaveDilemmaDescriber(ctx context.Context, dil
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return berrors.FromErr(op, dilemma_errors.ErrDilemmaAlreadyExists)
 		}
+
 		return berrors.InternalFromErr(op, err)
 	}
 
 	return nil
 }
 
-// GetDilemmaWithRoot загружает дилемму вместе с корневым узлом
+// GetDilemmaWithRoot загружает дилемму вместе с корневым узлом.
 func (r *DilemmaRepositoryAdapter) GetDilemmaWithRoot(ctx context.Context, dilemmaID uuid.UUID) (*dilemma_entity.Dilemma, error) {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - GetDilemmaWithRoot"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetDilemmaWithRoot"
 
 	var dilemmaEnt pentity.DilemmaEntity
 	if err := r.DB.WithContext(ctx).
 		Model(&pentity.DilemmaEntity{}).
 		Preload("RootNode").
-		First(&dilemmaEnt, "id = ?", dilemmaID).
+		Where(&dilemmaEnt, " = ?", dilemmaID).
 		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, berrors.FromErr(op, dilemma_errors.ErrDilemmaNotFound)
 		}
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return dilemmaEnt.ToModel(), nil
 }
 
-// DeleteDilemma удаляет дилемму (каскадное удаление узлов — за счёт FK в БД)
+func (r *DilemmaRepositoryAdapter) GetDilemmasByOwner(ctx context.Context, ownerID uuid.UUID, page, size int) ([]dilemma_entity.Dilemma, error) {
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetDilemmasByOwner"
+
+	offset := (page - 1) * size
+
+	var entities []*pentity.DilemmaEntity
+
+	if err := r.DB.WithContext(ctx).
+		Model(&pentity.DilemmaEntity{}).
+		Preload("RootNode").
+		Where("owner_id = ?", ownerID).
+		Offset(offset).
+		Limit(size).
+		Order("id ASC").
+		Find(&entities).
+		Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, berrors.FromErr(op, dilemma_errors.ErrDilemmaNotFound)
+		}
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	return pentity.ToModelList(entities), nil
+}
+
+// DeleteDilemma удаляет дилемму (каскадное удаление узлов — за счёт FK в БД).
 func (r *DilemmaRepositoryAdapter) DeleteDilemma(ctx context.Context, dilemmaID uuid.UUID) error {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - DeleteDilemma"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - DeleteDilemma"
 
 	result := r.DB.WithContext(ctx).Delete(&pentity.DilemmaEntity{}, "id = ?", dilemmaID)
 	if result.Error != nil {
 		return berrors.InternalFromErr(op, result.Error)
 	}
+
 	if result.RowsAffected == 0 {
 		return berrors.FromErr(op, dilemma_errors.ErrDilemmaNotFound)
 	}
+
 	return nil
 }
 
-// SaveNode сохраняет отдельный узел
+// SaveNode сохраняет отдельный узел.
 func (r *DilemmaRepositoryAdapter) SaveNode(ctx context.Context, node *dilemma_entity.DilemmaNode) error {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - SaveNode"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - SaveNode"
 
 	nodeEnt := pentity.DilemmaNodeEntityFromModel(node)
 
@@ -85,15 +115,16 @@ func (r *DilemmaRepositoryAdapter) SaveNode(ctx context.Context, node *dilemma_e
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return berrors.FromErr(op, dilemma_errors.ErrNodeAlreadyExists)
 		}
+
 		return berrors.InternalFromErr(op, err)
 	}
 
 	return nil
 }
 
-// GetNode возвращает узел по ID
+// GetNode возвращает узел по ID.
 func (r *DilemmaRepositoryAdapter) GetNode(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error) {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - GetNode"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetNode"
 
 	var nodeEnt pentity.DilemmaNodeEntity
 	if err := r.DB.WithContext(ctx).
@@ -103,29 +134,32 @@ func (r *DilemmaRepositoryAdapter) GetNode(ctx context.Context, nodeID uuid.UUID
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, berrors.FromErr(op, dilemma_errors.ErrNodeNotFound)
 		}
+
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
 	return nodeEnt.ToModel(), nil
 }
 
-// DeleteNode удаляет узел (и связи в node_children — каскадно)
+// DeleteNode удаляет узел (и связи в node_children — каскадно).
 func (r *DilemmaRepositoryAdapter) DeleteNode(ctx context.Context, nodeID uuid.UUID) error {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - DeleteNode"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - DeleteNode"
 
 	result := r.DB.WithContext(ctx).Delete(&pentity.DilemmaNodeEntity{}, "id = ?", nodeID)
 	if result.Error != nil {
 		return berrors.InternalFromErr(op, result.Error)
 	}
+
 	if result.RowsAffected == 0 {
 		return berrors.FromErr(op, dilemma_errors.ErrNodeNotFound)
 	}
+
 	return nil
 }
 
-// GetChildren возвращает дочерние узлы по parentID через join-таблицу
+// GetChildren возвращает дочерние узлы по parentID через join-таблицу.
 func (r *DilemmaRepositoryAdapter) GetChildren(ctx context.Context, parentID uuid.UUID) ([]*dilemma_entity.DilemmaNode, error) {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - GetChildren"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetChildren"
 
 	var childrenEnt []*pentity.DilemmaNodeEntity
 	if err := r.DB.WithContext(ctx).
@@ -142,12 +176,13 @@ func (r *DilemmaRepositoryAdapter) GetChildren(ctx context.Context, parentID uui
 	for i, ent := range childrenEnt {
 		children[i] = ent.ToModel()
 	}
+
 	return children, nil
 }
 
-// LinkParentChild создаёт связь в таблице node_children
+// LinkParentChild создаёт связь в таблице node_children.
 func (r *DilemmaRepositoryAdapter) LinkParentChild(ctx context.Context, parentID, childID uuid.UUID) error {
-	const op = "repo - dilemma - DilemmaRepositoryAdapter - LinkParentChild"
+	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - LinkParentChild"
 
 	link := map[string]interface{}{
 		"node_id":  parentID,
@@ -158,6 +193,7 @@ func (r *DilemmaRepositoryAdapter) LinkParentChild(ctx context.Context, parentID
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return berrors.FromErr(op, dilemma_errors.ErrNodeAlreadyHasParent)
 		}
+
 		return berrors.InternalFromErr(op, err)
 	}
 

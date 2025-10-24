@@ -12,6 +12,7 @@ import (
 type DilemmaRepositoryPort interface {
 	SaveDilemmaDescriber(ctx context.Context, dilemma *dilemma_entity.Dilemma) error
 	GetDilemmaWithRoot(ctx context.Context, dilemmaID uuid.UUID) (*dilemma_entity.Dilemma, error)
+	GetDilemmasByOwner(ctx context.Context, ownerID uuid.UUID, page, size int) ([]dilemma_entity.Dilemma, error)
 	DeleteDilemma(ctx context.Context, dilemmaID uuid.UUID) error
 
 	SaveNode(ctx context.Context, node *dilemma_entity.DilemmaNode) error

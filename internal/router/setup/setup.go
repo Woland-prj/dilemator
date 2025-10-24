@@ -1,10 +1,10 @@
 package router_setup
 
 import (
-	// swagger docs import.
 	"net/http"
 
 	"github.com/Woland-prj/dilemator/config"
+	// swagger docs import.
 	_ "github.com/Woland-prj/dilemator/docs"
 	"github.com/Woland-prj/dilemator/internal/router/middleware"
 	"github.com/Woland-prj/dilemator/pkg/logger"
@@ -21,7 +21,7 @@ import (
 // @version     1.0
 // @host        dilemator.wwoland.ru
 // @BasePath    /.
-func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface) fiber.Router {
+func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface) (apiGroup, componentsGroup fiber.Router) {
 	// Options
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))
@@ -45,5 +45,8 @@ func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface) fiber.Rou
 		Root: http.Dir(cfg.HTTP.AssetsDir),
 	}))
 
-	return app
+	apiGroup = app.Group("/api")
+	componentsGroup = app.Group("/components")
+
+	return apiGroup, componentsGroup
 }

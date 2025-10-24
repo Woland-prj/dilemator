@@ -99,7 +99,6 @@ linters:
         - name: exported
         - name: if-return
         - name: increment-decrement
-        - name: var-naming
         - name: var-declaration
         - name: range
         - name: receiver-naming

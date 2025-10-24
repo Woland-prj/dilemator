@@ -66,7 +66,7 @@ func (s *sessionService) Login(ctx context.Context, req security_dto.LoginDto, u
 	// Authenticate
 	usr, err := s.userService.GetByEmail(ctx, req.Email)
 	if err != nil {
-		if errors.As(err, &user_errors.ErrUserNotFound) {
+		if errors.Is(err, user_errors.ErrUserNotFound) {
 			return nil, berrors.FromErr(op, security_errors.ErrInvalidCredentials)
 		}
 

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -destination=mock_users.go -package users . UserService
+//go:generate mockgen -destination=mock_service.go -package users_service . UserService
 
 type UserService interface {
 	Register(ctx context.Context, req *users_dto.RegisterDto) (*user_entity.User, error)

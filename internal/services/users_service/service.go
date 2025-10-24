@@ -47,7 +47,6 @@ func (s *usersService) basicRegister(
 	const op = "users - usersService - basicRegister"
 
 	_, err := s.userRepo.FindByEmail(ctx, req.Email)
-
 	if err == nil {
 		return nil, berrors.FromErr(op, user_errors.ErrUserAlreadyExists)
 	}
@@ -92,7 +91,6 @@ func (s *usersService) TgRegister(
 	const op = "users - usersService - TgRegister"
 
 	_, err := s.userRepo.FindByTgID(ctx, req.TgID)
-
 	if err == nil {
 		return nil, berrors.Wrap(
 			op,
@@ -166,7 +164,7 @@ func (s *usersService) GetByTgID(
 
 			return nil, berrors.Wrap(
 				op,
-				fmt.Sprintf("User with tg id %s is not found", id),
+				fmt.Sprintf("User with tg id %d is not found", id),
 				err,
 			)
 		}

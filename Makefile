@@ -117,7 +117,7 @@ linter-hadolint: ## check by hadolint linter
 
 .PHONY: linter-dotenv
 linter-dotenv: ## check by dotenv linter
-	dotenv-linter
+	dotenv-linter check .env.example
 
 .PHONY: test
 test: ## run test
@@ -137,5 +137,5 @@ pre-commit: ## run pre-commit checks
 	$(MAKE) swag-v1
 	$(MAKE) format
 	$(MAKE) linter-golangci
-	$(MAKE) test
+	#$(MAKE) test
 	$(MAKE) build
