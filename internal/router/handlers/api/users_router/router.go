@@ -48,7 +48,7 @@ func Register(
 
 	userComponentsGroup := componentsRouter.Group("/user")
 	{
-		userComponentsGroup.Get("/profilebage", middleware.WithAuth(cm), c.profileBadge)
+		userComponentsGroup.Get("/profilebadge", middleware.WithAuth(cm), c.profileBadge)
 	}
 
 	return nil
@@ -127,5 +127,5 @@ func (c *UserController) profileBadge(ctx *fiber.Ctx) error {
 		)
 	}
 
-	return ui.ProfileBage(*user).Render(ctx.Context(), ctx)
+	return ui.ProfileBadge(*user).Render(ctx.Context(), ctx)
 }

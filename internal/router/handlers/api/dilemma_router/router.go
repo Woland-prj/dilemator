@@ -59,6 +59,7 @@ func Register(
 	dilemmaComponentsGroup := componentsRouter.Group("/dilemma")
 	{
 		dilemmaComponentsGroup.Get("/dashboard", middleware.WithAuth(cm), c.dashboard)
+		dilemmaComponentsGroup.Get("/editor/root", middleware.WithAuth(cm), c.rootEditor)
 	}
 
 	return nil
@@ -131,6 +132,15 @@ func (c *DilemmaController) dashboard(ctx *fiber.Ctx) error {
 	}
 
 	return ui.Dashboard(dilemmas).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) rootEditor(ctx *fiber.Ctx) error {
+	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return ui.ErrorBlock(security_errors.ErrSession).Render(ctx.Context(), ctx)
+	}
+
+	return ui.DilemmaCreation().Render(ctx.Context(), ctx)
 }
 
 func parsePagination(ctx *fiber.Ctx) (page, size int, err error) {

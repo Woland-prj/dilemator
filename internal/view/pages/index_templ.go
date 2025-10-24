@@ -50,7 +50,7 @@ func Landing(menu ui.MenuProps) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout.Base(layout.BaseProps{Title: "Dilemator — Ethical Dilemmas Platform", Menu: menu}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout.Base(layout.BaseProps{Title: "Dilemator — Ethical Dilemmas Platform", Menu: menu, DrawUserBage: false}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

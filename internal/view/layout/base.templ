@@ -3,20 +3,21 @@ package layout
 import "github.com/Woland-prj/dilemator/internal/view/ui"
 
 type BaseProps struct {
-	Title string
-	Menu  ui.MenuProps
+	Title        string
+	Menu         ui.MenuProps
+	DrawUserBage bool
 }
 
 templ Base(props BaseProps) {
 	<!DOCTYPE html>
-	<html data-theme="cupcake" lang="en">
+	<html data-theme="bumblebee" lang="en">
 		<head>
 			<title>{ props.Title }</title>
 			<link rel="stylesheet" href="/assets/main.css"/>
 			<link rel="icon" href="/assets/favicon.ico" type="image/x-icon"/>
 		</head>
 		<body>
-			@ui.Header(props.Menu)
+			@ui.Header(props.Menu, props.DrawUserBage)
 			<div id="content-container">
 				{ children... }
 			</div>

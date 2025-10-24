@@ -31,19 +31,26 @@ func Dashboard(models []dilemma_entity.Dilemma) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-wrap items-center gap-8\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, dilemma := range models {
-			templ_7745c5c3_Err = DilemmaCard(dilemma).Render(ctx, templ_7745c5c3_Buffer)
+		if len(models) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6 animate-fade-in\"><div class=\"flex flex-col items-center space-y-4 bg-base-200 rounded-2xl p-10 shadow-sm border border-base-300\"><!-- SVG-иллюстрация --><h2 class=\"text-2xl font-semibold text-primary-content\">No dilemmas yet</h2><p class=\"text-secondary-content max-w-md\">Start by creating your first dilemma and explore how others might respond.</p><button class=\"btn btn-primary btn-wide\" hx-get=\"/components/dilemma/editor/root\" hx-target=\"#content-container\" hx-swap=\"innerHTML\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5 mr-2\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg> Add Dilemma</button></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-wrap items-start gap-8 animate-fade-in\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, dilemma := range models {
+				templ_7745c5c3_Err = DilemmaCard(dilemma).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		return nil
 	})

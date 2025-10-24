@@ -58,7 +58,7 @@ build-templ: ## build templates to go files
 
 .PHONY: build-css
 build-css: ## build css styles
-	npm --prefix web run build:css -- --minify
+	npm --prefix web run build:css --
 
 .PHONY: build-js
 build-js: ## build javascript bundle

@@ -1,14 +1,15 @@
 {
   "dependencies": {
+    "@tailwindcss/cli": "^4.1.16",
     "htmx.org": "^2.0.2"
   },
   "devDependencies": {
-    "daisyui": "^5.3.7",
+    "daisyui": "^5.3.9",
     "esbuild": "0.23.1",
-    "tailwindcss": "^3.4.10"
+    "tailwindcss": "^4.1.16"
   },
   "scripts": {
-    "build:css": "npx tailwindcss -i src/main.css -o public/assets/main.css",
+    "build:css": "npx @tailwindcss/cli -i ./src/main.css -o ./public/assets/main.css",
     "build:js": "npx esbuild src/main.js --bundle --outfile=public/assets/main.js"
   }
 }

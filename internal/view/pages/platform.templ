@@ -4,7 +4,7 @@ import "github.com/Woland-prj/dilemator/internal/view/layout"
 import "github.com/Woland-prj/dilemator/internal/view/ui"
 
 templ Platform(menu ui.MenuProps) {
-	@layout.Base(layout.BaseProps{Title: "Platform page", Menu: menu}) {
+	@layout.Base(layout.BaseProps{Title: "Platform page", Menu: menu, DrawUserBage: true}) {
 		<div
 			class="container mx-auto md:px-20"
 			hx-get="/components/dilemma/dashboard"
