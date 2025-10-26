@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/security_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/security_errors"
@@ -18,6 +19,7 @@ import (
 	"github.com/Woland-prj/dilemator/pkg/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 const (
@@ -59,7 +61,7 @@ func Register(
 	dilemmaComponentsGroup := componentsRouter.Group("/dilemma")
 	{
 		dilemmaComponentsGroup.Get("/dashboard", middleware.WithAuth(cm), c.dashboard)
-		dilemmaComponentsGroup.Get("/editor/root", middleware.WithAuth(cm), c.rootEditor)
+		dilemmaComponentsGroup.Get("/editor", middleware.WithAuth(cm), c.editor)
 	}
 
 	return nil
@@ -134,13 +136,44 @@ func (c *DilemmaController) dashboard(ctx *fiber.Ctx) error {
 	return ui.Dashboard(dilemmas).Render(ctx.Context(), ctx)
 }
 
-func (c *DilemmaController) rootEditor(ctx *fiber.Ctx) error {
+func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
 	if !ok {
 		return ui.ErrorBlock(security_errors.ErrSession).Render(ctx.Context(), ctx)
 	}
 
-	return ui.DilemmaCreation().Render(ctx.Context(), ctx)
+	didStr := ctx.Query("did")
+	nidStr := ctx.Query("nid")
+
+	if didStr == "" {
+		return ui.NodeEditor("New dilemma", *dilemma_entity.NewEmptyNode(uuid.Nil), true).Render(ctx.Context(), ctx)
+	}
+
+	did, err := uuid.Parse(didStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	dilemma, err := c.s.GetByID(ctx.Context(), did)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	if nidStr == "" {
+		return ui.NodeEditor(dilemma.Topic, *dilemma_entity.NewEmptyNode(uuid.Nil), true).Render(ctx.Context(), ctx)
+	}
+
+	nid, err := uuid.Parse(nidStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	node, err := c.s.GetNodeByID(ctx.Context(), nid)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	return ui.NodeEditor(dilemma.Topic, *node, false).Render(ctx.Context(), ctx)
 }
 
 func parsePagination(ctx *fiber.Ctx) (page, size int, err error) {

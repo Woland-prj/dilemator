@@ -79,4 +79,12 @@
                 referencedColumnNames="id"
                 onDelete="CASCADE"/>
     </changeSet>
+    <changeSet id="4-add-name-nodes-table"
+               author="Woland-prj">
+        <addColumn tableName="dilemma_nodes">
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

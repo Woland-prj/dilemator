@@ -37,8 +37,18 @@ func (s *dilemmaService) CreateDilemma(
 ) (*dilemma_entity.Dilemma, error) {
 	const op = "dilemma - dilemmaService - CreateDilemma"
 
-	rootNode := dilemma_entity.NewDilemmaNode(uuid.New(), req.RootValue)
-	dilemma := dilemma_entity.NewDilemma(uuid.New(), req.OwnerID, req.Topic, rootNode)
+	rootNode := dilemma_entity.NewDilemmaNode(
+		uuid.New(),
+		uuid.Nil,
+		req.RootName,
+		req.RootValue,
+	)
+	dilemma := dilemma_entity.NewDilemma(
+		uuid.New(),
+		req.OwnerID,
+		req.Topic,
+		rootNode,
+	)
 
 	// Сохраняем корневой узел
 	if err := s.repo.SaveNode(ctx, rootNode); err != nil {
@@ -111,6 +121,8 @@ func (s *dilemmaService) UpdateDilemma(
 
 	// Обновляем корневой узел
 	existing.RootNode.Value = req.RootValue
+
+	existing.RootNode.Name = req.RootName
 	if err := s.repo.SaveNode(ctx, existing.RootNode); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to update root node: %v", op, err))
 
@@ -161,7 +173,7 @@ func (s *dilemmaService) CreateDilemmaNode(
 		return nil, berrors.Wrap(op, "parent node not found", dilemma_errors.ErrNodeNotFound)
 	}
 
-	node := dilemma_entity.NewDilemmaNode(uuid.New(), req.Value)
+	node := dilemma_entity.NewDilemmaNode(uuid.New(), req.ParentID, req.Name, req.Value)
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to save node: %v", op, err))
@@ -231,6 +243,7 @@ func (s *dilemmaService) UpdateDilemmaNode(
 		return nil, err
 	}
 
+	node.Name = req.Name
 	node.Value = req.Value
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {

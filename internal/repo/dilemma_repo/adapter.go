@@ -51,6 +51,7 @@ func (r *DilemmaRepositoryAdapter) GetDilemmaWithRoot(ctx context.Context, dilem
 	if err := r.DB.WithContext(ctx).
 		Model(&pentity.DilemmaEntity{}).
 		Preload("RootNode").
+		Preload("RootNode.Children").
 		Where(&dilemmaEnt, " = ?", dilemmaID).
 		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -126,15 +127,48 @@ func (r *DilemmaRepositoryAdapter) SaveNode(ctx context.Context, node *dilemma_e
 func (r *DilemmaRepositoryAdapter) GetNode(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error) {
 	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetNode"
 
+	tx := r.DB.WithContext(ctx).Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
 	var nodeEnt pentity.DilemmaNodeEntity
-	if err := r.DB.WithContext(ctx).
+
+	if err := tx.
 		Model(&pentity.DilemmaNodeEntity{}).
+		Preload("Children").
 		First(&nodeEnt, "id = ?", nodeID).
 		Error; err != nil {
+		tx.Rollback()
+
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, berrors.FromErr(op, dilemma_errors.ErrNodeNotFound)
 		}
 
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	var parentID uuid.UUID
+
+	err := tx.
+		Table(pentity.NodeChildrenTable).
+		Select("node_id").
+		Where("child_id = ?", nodeID).
+		Scan(&parentID).
+		Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		tx.Rollback()
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	nodeEnt.ParentID = parentID
+
+	if err := tx.Commit().Error; err != nil {
 		return nil, berrors.InternalFromErr(op, err)
 	}
 

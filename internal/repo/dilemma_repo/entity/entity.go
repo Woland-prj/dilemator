@@ -50,8 +50,10 @@ func DilemmaEntityFromModel(d *dilemma_entity.Dilemma) *DilemmaEntity {
 
 // DilemmaNodeEntity — GORM-сущность для таблицы dilemma_nodes.
 type DilemmaNodeEntity struct {
-	ID    uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
-	Value string    `gorm:"column:value;type:text;not null"`
+	ID       uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
+	Name     string    `gorm:"column:name;type:text;not null"`
+	Value    string    `gorm:"column:value;type:text;not null"`
+	ParentID uuid.UUID `gorm:"-"`
 
 	// Связь "один ко многим" через join-таблицу node_children
 	Children []*DilemmaNodeEntity `gorm:"many2many:node_children;joinForeignKey:node_id;joinReferences:child_id;constraint:OnDelete:CASCADE"`
@@ -62,15 +64,30 @@ func (*DilemmaNodeEntity) TableName() string {
 }
 
 func (e *DilemmaNodeEntity) ToModel() *dilemma_entity.DilemmaNode {
-	return &dilemma_entity.DilemmaNode{
-		ID:    e.ID,
-		Value: e.Value,
+	node := &dilemma_entity.DilemmaNode{
+		ID:       e.ID,
+		Name:     e.Name,
+		Value:    e.Value,
+		ParentID: e.ParentID,
 	}
+
+	if len(e.Children) > 0 {
+		node.Scenrios = make([]*dilemma_entity.Scenario, len(e.Children))
+		for i, child := range e.Children {
+			node.Scenrios[i] = &dilemma_entity.Scenario{
+				Id:   child.ID,
+				Name: child.Name,
+			}
+		}
+	}
+
+	return node
 }
 
 func DilemmaNodeEntityFromModel(n *dilemma_entity.DilemmaNode) *DilemmaNodeEntity {
 	return &DilemmaNodeEntity{
 		ID:    n.ID,
+		Name:  n.Name,
 		Value: n.Value,
 	}
 }

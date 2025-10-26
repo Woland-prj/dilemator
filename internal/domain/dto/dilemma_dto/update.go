@@ -5,5 +5,6 @@ import "github.com/google/uuid"
 type UpdateDilemmaDto struct {
 	ID        uuid.UUID
 	Topic     string
+	RootName  string
 	RootValue string
 }
