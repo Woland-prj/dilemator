@@ -34,5 +34,6 @@ vendor/
 coverage.txt
 
 web/node_modules
+
 web/public/assets/*.js
 web/public/assets/*.css
