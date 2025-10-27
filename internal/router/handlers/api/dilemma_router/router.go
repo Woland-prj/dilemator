@@ -146,7 +146,7 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 	nidStr := ctx.Query("nid")
 
 	if didStr == "" {
-		return ui.NodeEditor("New dilemma", *dilemma_entity.NewEmptyNode(uuid.Nil), true).Render(ctx.Context(), ctx)
+		return ui.NodeEditor(ui.NewEditorPropsStr("New dilemma", *dilemma_entity.NewEmptyNode(uuid.Nil), true)).Render(ctx.Context(), ctx)
 	}
 
 	did, err := uuid.Parse(didStr)
@@ -160,7 +160,7 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 	}
 
 	if nidStr == "" {
-		return ui.NodeEditor(dilemma.Topic, *dilemma_entity.NewEmptyNode(uuid.Nil), true).Render(ctx.Context(), ctx)
+		return ui.NodeEditor(ui.NewEditorPropsStr(dilemma.Topic, *dilemma_entity.NewEmptyNode(uuid.Nil), true)).Render(ctx.Context(), ctx)
 	}
 
 	nid, err := uuid.Parse(nidStr)
@@ -173,7 +173,7 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
-	return ui.NodeEditor(dilemma.Topic, *node, false).Render(ctx.Context(), ctx)
+	return ui.NodeEditor(ui.NewEditorPropsStr(dilemma.Topic, *node, false)).Render(ctx.Context(), ctx)
 }
 
 func parsePagination(ctx *fiber.Ctx) (page, size int, err error) {

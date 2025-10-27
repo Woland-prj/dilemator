@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "@preact/signals": "^2.3.2",
     "@tailwindcss/cli": "^4.1.16",
-    "htmx.org": "^2.0.2"
+    "htmx.org": "^2.0.2",
+    "preact": "^10.27.2"
   },
   "devDependencies": {
     "daisyui": "^5.3.9",
@@ -10,6 +12,6 @@
   },
   "scripts": {
     "build:css": "npx @tailwindcss/cli -i ./src/main.css -o ./public/assets/main.css",
-    "build:js": "npx esbuild src/main.js --bundle --outfile=public/assets/main.js"
+    "build:js": "npx esbuild src/*.js --bundle --format=esm --jsx=automatic --loader:.js=jsx --jsx-import-source=preact --alias:react=preact/compat --alias:react-dom=preact/compat --alias:react/jsx-runtime=preact/jsx-runtime --outdir=public/assets"
   }
 }
