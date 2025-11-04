@@ -70,7 +70,7 @@ watch: ## watch rebuiding all stuff
 
 .PHONY: watch-app
 watch-app: ## watch rebuiding application
-	CGO_ENABLED=0 env $$(grep -v '^#' .env.example | xargs) \
+	CGO_ENABLED=0 env $$(grep -v '^#' .env.local | xargs) \
 	go run github.com/air-verse/air@latest \
 	--build.cmd "$(MAKE) build-app" \
 	--build.bin "$(LOCAL_BIN)" \

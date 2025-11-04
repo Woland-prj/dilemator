@@ -52,7 +52,7 @@ func (r *DilemmaRepositoryAdapter) GetDilemmaWithRoot(ctx context.Context, dilem
 		Model(&pentity.DilemmaEntity{}).
 		Preload("RootNode").
 		Preload("RootNode.Children").
-		Where(&dilemmaEnt, " = ?", dilemmaID).
+		First(&dilemmaEnt, "id = ?", dilemmaID).
 		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, berrors.FromErr(op, dilemma_errors.ErrDilemmaNotFound)

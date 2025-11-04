@@ -2,13 +2,14 @@ package dilemma_router
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/security_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
+	"github.com/Woland-prj/dilemator/internal/domain/errors/dilemma_errors"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/security_errors"
-	"github.com/Woland-prj/dilemator/internal/domain/errors/user_errors"
 	"github.com/Woland-prj/dilemator/internal/router/managers"
 	"github.com/Woland-prj/dilemator/internal/router/middleware"
 	"github.com/Woland-prj/dilemator/internal/router/requests"
@@ -16,6 +17,7 @@ import (
 	"github.com/Woland-prj/dilemator/internal/services/dilemma_service"
 	"github.com/Woland-prj/dilemator/internal/services/factory"
 	"github.com/Woland-prj/dilemator/internal/view/ui"
+	"github.com/Woland-prj/dilemator/internal/view/ui/nodeeditor"
 	"github.com/Woland-prj/dilemator/pkg/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -56,6 +58,7 @@ func Register(
 	dilemmaAPIGroup := apiRouter.Group("/dilemma")
 	{
 		dilemmaAPIGroup.Post("", middleware.WithAuth(cm), c.createDilemma)
+		dilemmaAPIGroup.Post("/node", middleware.WithAuth(cm), c.createDilemmaNode)
 	}
 
 	dilemmaComponentsGroup := componentsRouter.Group("/dilemma")
@@ -93,11 +96,11 @@ func (c *DilemmaController) createDilemma(ctx *fiber.Ctx) error {
 		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
 	}
 
-	_, err := c.s.CreateDilemma(ctx.Context(), body.ToModel(requester.GetID()))
+	dilemma, err := c.s.CreateDilemma(ctx.Context(), body.ToModel(requester.GetID()))
 	if err != nil {
 		c.l.Debug(berrors.FromErr(op, err).Error())
 
-		if errors.Is(err, user_errors.ErrUserAlreadyExists) {
+		if errors.Is(err, dilemma_errors.ErrDilemmaAlreadyExists) {
 			return responses.ErrorResponse(
 				ctx,
 				http.StatusConflict,
@@ -114,7 +117,73 @@ func (c *DilemmaController) createDilemma(ctx *fiber.Ctx) error {
 		)
 	}
 
-	return ctx.SendStatus(http.StatusCreated)
+	return nodeeditor.EditorContainer(*dilemma, *dilemma.RootNode, false).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
+	const op = "http - DilemmaController - createDilemmaNode"
+
+	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+	}
+
+	didStr := ctx.Query("did")
+	pidStr := ctx.Query("pid")
+
+	if didStr == "" || pidStr == "" {
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "empty params")
+	}
+
+	did, err := uuid.Parse(didStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	pid, err := uuid.Parse(pidStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	var body requests.CreateNode
+
+	if err := ctx.BodyParser(&body); err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "invalid request body")
+	}
+
+	if err := c.validate(body, ctx, op); err != nil {
+		return err
+	}
+
+	dilemma, err := c.s.GetByID(ctx.Context(), did)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	node, err := c.s.CreateDilemmaNode(ctx.Context(), body.ToModel(pid))
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+
+		if errors.Is(err, dilemma_errors.ErrNodeAlreadyExists) {
+			return responses.ErrorResponse(
+				ctx,
+				http.StatusConflict,
+				"CONFLICT",
+				err.Error(),
+			)
+		}
+
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusInternalServerError,
+			"INTERNAL_SERVER_ERROR",
+			"internal server error",
+		)
+	}
+
+	return nodeeditor.EditorContainer(*dilemma, *node, false).Render(ctx.Context(), ctx)
 }
 
 func (c *DilemmaController) dashboard(ctx *fiber.Ctx) error {
@@ -144,9 +213,10 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 
 	didStr := ctx.Query("did")
 	nidStr := ctx.Query("nid")
+	pidStr := ctx.Query("pid")
 
 	if didStr == "" {
-		return ui.NodeEditor(ui.NewEditorPropsStr("New dilemma", *dilemma_entity.NewEmptyNode(uuid.Nil), true)).Render(ctx.Context(), ctx)
+		return nodeeditor.EditorContainer(*dilemma_entity.NewEmptyDilemma(), *dilemma_entity.NewEmptyNode(uuid.Nil), true).Render(ctx.Context(), ctx)
 	}
 
 	did, err := uuid.Parse(didStr)
@@ -159,8 +229,19 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
+	if pidStr != "" {
+		pid, err := uuid.Parse(pidStr)
+		if err != nil {
+			return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+		}
+
+		c.l.Debug("empty node is", slog.Any("node", *dilemma_entity.NewEmptyNode(pid)))
+
+		return nodeeditor.EditorContainer(*dilemma, *dilemma_entity.NewEmptyNode(pid), true).Render(ctx.Context(), ctx)
+	}
+
 	if nidStr == "" {
-		return ui.NodeEditor(ui.NewEditorPropsStr(dilemma.Topic, *dilemma_entity.NewEmptyNode(uuid.Nil), true)).Render(ctx.Context(), ctx)
+		return nodeeditor.EditorContainer(*dilemma, *dilemma.RootNode, true).Render(ctx.Context(), ctx)
 	}
 
 	nid, err := uuid.Parse(nidStr)
@@ -173,7 +254,7 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
-	return ui.NodeEditor(ui.NewEditorPropsStr(dilemma.Topic, *node, false)).Render(ctx.Context(), ctx)
+	return nodeeditor.EditorContainer(*dilemma, *node, false).Render(ctx.Context(), ctx)
 }
 
 func parsePagination(ctx *fiber.Ctx) (page, size int, err error) {

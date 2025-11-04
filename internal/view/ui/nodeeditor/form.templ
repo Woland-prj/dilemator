@@ -1,0 +1,71 @@
+package nodeeditor
+
+import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
+import "github.com/google/uuid"
+import "fmt"
+
+func getURL(isRoot bool, did uuid.UUID, pid uuid.UUID) string {
+	if isRoot {
+		return "/api/dilemma"
+	} else {
+		return fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s", did.String(), pid.String())
+	}
+}
+
+templ ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNode, isNew bool) {
+	<script src="/assets/scenario_form_interact.js" type="application/javascript"></script>
+	<form
+		class="flex flex-col h-full w-full gap-y-4"
+		if isNew {
+			hx-post={ getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ParentID) }
+		} else {
+			hx-put={ getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ID) }
+		}
+		hx-trigger="submit"
+		hx-ext="json-enc"
+		hx-target="#content-container"
+	>
+		if (node.ParentID == uuid.Nil) {
+			<input
+				type="text"
+				placeholder="Topic of your dilemma..."
+				class="input w-full"
+				name="topic"
+				value={ dilemma.Topic }
+			/>
+		} else {
+			<h2 class="text-2xl font-semibold text-primary-content">
+				{ dilemma.Topic }
+			</h2>
+		}
+		<fieldset class="fieldset flex flex-col bg-base-300 border-base-300 rounded-box w-full h-full border p-4">
+			<legend class="fieldset-legend">Scenario editing</legend>
+			<label class="label">Scenario name</label>
+			<input
+				type="text"
+				value={ node.Name }
+				class="input w-full"
+				name="name"
+				placeholder="Name of your scenario"
+			/>
+			<label class="label">Scenario description</label>
+			<textarea
+				class="textarea w-full flex-1 resize-none"
+				name="value"
+				placeholder="Describe what's happening..."
+			>{ node.Value }</textarea>
+			<label class="label">Scenario image</label>
+			<input
+				type="file"
+				name="image"
+				class="file-input w-full"
+			/>
+			<button
+				type="submit"
+				class="btn btn-neutral mt-4"
+			>
+				Save scenario
+			</button>
+		</fieldset>
+	</form>
+}

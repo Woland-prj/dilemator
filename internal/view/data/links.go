@@ -17,7 +17,14 @@ func LandingMenuLinks() []Link {
 
 func PlatformMenuLinks() []Link {
 	return []Link{
-		{Name: "Test1", Href: "/test"},
-		{Name: "Tes2", Href: "/test2"},
+		{Name: "Platform option 1", Href: "/pl1"},
+		{Name: "Platform option 2", Href: "/pl2"},
+	}
+}
+
+func EditorMenuLinks() []Link {
+	return []Link{
+		{Name: "Editor option 1", Href: "/ed1"},
+		{Name: "Editor option 2", Href: "/ed2"},
 	}
 }

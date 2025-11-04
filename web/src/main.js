@@ -1,4 +1,5 @@
 import "htmx.org";
+import "htmx-ext-json-enc";
 
 async function onTelegramAuth(user) {
   const payload = {

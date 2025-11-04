@@ -10,16 +10,16 @@ type Dilemma struct {
 }
 
 type DilemmaNode struct {
-	ID       uuid.UUID
-	ParentID uuid.UUID
-	Name     string
-	Value    string
-	Scenrios []*Scenario
+	ID        uuid.UUID
+	ParentID  uuid.UUID
+	Name      string
+	Value     string
+	Scenarios []*Scenario
 }
 
 type Scenario struct {
+	ID   uuid.UUID
 	Name string
-	Id   uuid.UUID
 }
 
 func NewDilemma(id, ownerID uuid.UUID, topic string, rootNode *DilemmaNode) *Dilemma {
@@ -32,9 +32,18 @@ func NewDilemmaNode(id, pid uuid.UUID, name, value string) *DilemmaNode {
 
 func NewEmptyNode(pid uuid.UUID) *DilemmaNode {
 	return &DilemmaNode{
-		ID:       uuid.Nil,
-		ParentID: pid,
-		Name:     "",
-		Value:    "",
+		ID:        uuid.Nil,
+		ParentID:  pid,
+		Name:      "",
+		Value:     "",
+		Scenarios: []*Scenario{},
+	}
+}
+
+func NewEmptyDilemma() *Dilemma {
+	return &Dilemma{
+		ID:      uuid.Nil,
+		OwnerID: uuid.Nil,
+		Topic:   "",
 	}
 }

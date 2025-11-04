@@ -7,6 +7,8 @@
 
 # Config
 .env
+.env.*
+!.env.example
 
 # Binaries for programs and plugins
 *.exe
@@ -35,5 +37,5 @@ coverage.txt
 
 web/node_modules
 
-web/public/assets/*.js
-web/public/assets/*.css
+web/public/assets/*
+!web/public/assets/favicon.ico

@@ -11,17 +11,16 @@ templ Dashboard(models []dilemma_entity.Dilemma) {
 				<p class="text-secondary-content max-w-md">
 					Start by creating your first dilemma and explore how others might respond.
 				</p>
-				<button
+				<a
 					class="btn btn-primary btn-wide"
-					hx-get="/components/dilemma/editor"
-					hx-target="#content-container"
-					hx-swap="innerHTML"
+					href="/editor"
+					hx-boost="true"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
 					</svg>
 					Add Dilemma
-				</button>
+				</a>
 			</div>
 		</div>
 	} else {

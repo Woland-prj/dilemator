@@ -72,10 +72,10 @@ func (e *DilemmaNodeEntity) ToModel() *dilemma_entity.DilemmaNode {
 	}
 
 	if len(e.Children) > 0 {
-		node.Scenrios = make([]*dilemma_entity.Scenario, len(e.Children))
+		node.Scenarios = make([]*dilemma_entity.Scenario, len(e.Children))
 		for i, child := range e.Children {
-			node.Scenrios[i] = &dilemma_entity.Scenario{
-				Id:   child.ID,
+			node.Scenarios[i] = &dilemma_entity.Scenario{
+				ID:   child.ID,
 				Name: child.Name,
 			}
 		}

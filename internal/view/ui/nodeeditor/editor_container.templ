@@ -1,0 +1,18 @@
+package nodeeditor
+
+import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
+
+templ EditorContainer(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNode, isNew bool) {
+	<div class="flex items-center justify-center min-h-[92vh] text-center space-y-6 animate-fade-in">
+		<div class="flex min-h-[70vh] w-full items-stretch justify-center gap-x-4">
+			@PrevBtn(dilemma.ID, node.ParentID)
+			<div
+				class="flex items-stretch justify-between w-4/6 rounded-box bg-base-200 border-base-300 border gap-x-4 p-4"
+			>
+				@ScenarioForm(dilemma, node, isNew)
+				@ImagePreview("")
+			</div>
+			@ScenarioList(dilemma.ID, node)
+		</div>
+	</div>
+}

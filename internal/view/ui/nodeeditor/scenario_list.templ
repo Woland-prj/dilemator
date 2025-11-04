@@ -1,0 +1,36 @@
+package nodeeditor
+
+import "github.com/google/uuid"
+import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
+import "fmt"
+
+templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
+	<div class="flex flex-col gap-y-4">
+		for _, s := range node.Scenarios {
+			<button key={ s.ID.String() } class="btn btn-neutral btn-block">
+				{ s.Name }
+			</button>
+		}
+		<button
+			class={ fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil)) }
+			hx-get={ fmt.Sprintf("/components/dilemma/editor?did=%s&pid=%s", dilemmaID.String(), node.ID.String()) }
+			hx-target="#content-container"
+			hx-swap="innerHTML"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-5 w-5"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 4v16m8-8H4"
+				></path>
+			</svg>
+		</button>
+	</div>
+}

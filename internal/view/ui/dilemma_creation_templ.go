@@ -12,16 +12,16 @@ import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 import "encoding/json"
 
 type EditorProps struct {
-	Topic string
-	Node  dilemma_entity.DilemmaNode
-	IsNew bool
+	Dilemma dilemma_entity.Dilemma
+	Node    dilemma_entity.DilemmaNode
+	IsNew   bool
 }
 
-func NewEditorPropsStr(topic string, node dilemma_entity.DilemmaNode, isNew bool) string {
+func NewEditorPropsStr(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNode, isNew bool) string {
 	bytes, _ := json.Marshal(EditorProps{
-		Topic: topic,
-		Node:  node,
-		IsNew: isNew,
+		Dilemma: dilemma,
+		Node:    node,
+		IsNew:   isNew,
 	})
 	return string(bytes)
 }
