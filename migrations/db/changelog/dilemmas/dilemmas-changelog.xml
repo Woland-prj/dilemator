@@ -35,7 +35,7 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <createTable tableName="node_children">
+        <createTable tableName="node_childrens">
             <column name="node_id" type="UUID">
                 <constraints nullable="false"/>
             </column>
@@ -43,10 +43,10 @@
                 <constraints unique="true" nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="node_children"
+        <addPrimaryKey tableName="node_childrens"
                        columnNames="node_id, child_id"
-                       constraintName="pk_node_children"/>
-        <createIndex indexName="idx_node_children_node_id" tableName="node_children">
+                       constraintName="pk_node_childrens"/>
+        <createIndex indexName="idx_node_children_node_id" tableName="node_childrens">
             <column name="node_id"/>
         </createIndex>
     </changeSet>
@@ -63,8 +63,8 @@
 
         <!-- node_children.node_id → dilemma_nodes.id -->
         <addForeignKeyConstraint
-                constraintName="fk_node_children_node"
-                baseTableName="node_children"
+                constraintName="fk_node_childrens_node"
+                baseTableName="node_childrens"
                 baseColumnNames="node_id"
                 referencedTableName="dilemma_nodes"
                 referencedColumnNames="id"
@@ -72,8 +72,8 @@
 
         <!-- node_children.child_id → dilemma_nodes.id -->
         <addForeignKeyConstraint
-                constraintName="fk_node_children_child"
-                baseTableName="node_children"
+                constraintName="fk_node_childrens_child"
+                baseTableName="node_childrens"
                 baseColumnNames="child_id"
                 referencedTableName="dilemma_nodes"
                 referencedColumnNames="id"

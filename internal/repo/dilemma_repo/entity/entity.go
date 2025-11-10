@@ -8,7 +8,7 @@ import (
 const (
 	DilemmaTableName     = "dilemmas"
 	DilemmaNodeTableName = "dilemma_nodes"
-	NodeChildrenTable    = "node_children"
+	NodeChildrenTable    = "node_childrens"
 )
 
 // DilemmaEntity — GORM-сущность для таблицы dilemmas.
@@ -56,7 +56,12 @@ type DilemmaNodeEntity struct {
 	ParentID uuid.UUID `gorm:"-"`
 
 	// Связь "один ко многим" через join-таблицу node_children
-	Children []*DilemmaNodeEntity `gorm:"many2many:node_children;joinForeignKey:node_id;joinReferences:child_id;constraint:OnDelete:CASCADE"`
+	Children []*DilemmaNodeEntity `gorm:"many2many:node_childrens;foreignKey:ID;references:ID;joinForeignKey:node_id;joinReferences:child_id;constraint:OnDelete:CASCADE"`
+}
+
+type NodeChildren struct {
+	NodeID  uuid.UUID `gorm:"primaryKey;column:node_id;type:uuid"`
+	ChildID uuid.UUID `gorm:"primaryKey;column:child_id;type:uuid"`
 }
 
 func (*DilemmaNodeEntity) TableName() string {

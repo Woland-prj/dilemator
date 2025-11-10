@@ -9,20 +9,23 @@ import (
 	"github.com/Woland-prj/dilemator/internal/domain/errors/dilemma_errors"
 	pentity "github.com/Woland-prj/dilemator/internal/repo/dilemma_repo/entity"
 	"github.com/Woland-prj/dilemator/internal/services/dilemma_service"
+	"github.com/Woland-prj/dilemator/pkg/logger"
 	"github.com/Woland-prj/dilemator/pkg/postgres"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type DilemmaRepositoryAdapter struct {
+	l logger.Interface
 	*postgres.Postgres
 }
 
 var _ dilemma_service.DilemmaRepositoryPort = (*DilemmaRepositoryAdapter)(nil)
 
-func NewDilemmaRepositoryAdapter(pg *postgres.Postgres) *DilemmaRepositoryAdapter {
+func NewDilemmaRepositoryAdapter(pg *postgres.Postgres, l logger.Interface) *DilemmaRepositoryAdapter {
 	return &DilemmaRepositoryAdapter{
 		Postgres: pg,
+		l:        l,
 	}
 }
 
@@ -123,55 +126,64 @@ func (r *DilemmaRepositoryAdapter) SaveNode(ctx context.Context, node *dilemma_e
 	return nil
 }
 
-// GetNode возвращает узел по ID.
 func (r *DilemmaRepositoryAdapter) GetNode(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error) {
 	const op = "repo - dilemma_router - DilemmaRepositoryAdapter - GetNode"
 
 	tx := r.DB.WithContext(ctx).Begin()
-
 	defer func() {
-		if r := recover(); r != nil {
+		if p := recover(); p != nil {
 			tx.Rollback()
-			panic(r)
+			panic(p)
 		}
 	}()
 
 	var nodeEnt pentity.DilemmaNodeEntity
 
+	err := tx.SetupJoinTable(&pentity.DilemmaNodeEntity{}, "Children", &pentity.NodeChildren{})
+	if err != nil {
+		tx.Rollback()
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	// Загружаем узел вместе с детьми (Children)
 	if err := tx.
 		Model(&pentity.DilemmaNodeEntity{}).
 		Preload("Children").
-		First(&nodeEnt, "id = ?", nodeID).
+		Where("id = ?", nodeID).
+		First(&nodeEnt).
 		Error; err != nil {
 		tx.Rollback()
-
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, berrors.FromErr(op, dilemma_errors.ErrNodeNotFound)
 		}
-
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
-	var parentID uuid.UUID
-
-	err := tx.
+	// Узнаем parent-id через join-таблицу node_children
+	var parentID string
+	if err := tx.
 		Table(pentity.NodeChildrenTable).
 		Select("node_id").
 		Where("child_id = ?", nodeID).
-		Scan(&parentID).
-		Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		Find(&parentID).
+		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		tx.Rollback()
-
+		r.l.Debug("err here")
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
-	nodeEnt.ParentID = parentID
+	// Записываем parentID в сущность
+	if parentID != "" {
+		nodeEnt.ParentID = uuid.MustParse(parentID)
+	} else {
+		nodeEnt.ParentID = uuid.Nil
+	}
 
 	if err := tx.Commit().Error; err != nil {
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
+	r.l.Debug("node %+v", nodeEnt)
 	return nodeEnt.ToModel(), nil
 }
 
@@ -199,7 +211,7 @@ func (r *DilemmaRepositoryAdapter) GetChildren(ctx context.Context, parentID uui
 	if err := r.DB.WithContext(ctx).
 		Table(pentity.NodeChildrenTable).
 		Select("dn.id, dn.value").
-		Joins("JOIN dilemma_nodes dn ON node_children.child_id = dn.id").
+		Joins("JOIN dilemma_nodes dn ON node_childrens.child_id = dn.id").
 		Where("node_children.node_id = ?", parentID).
 		Find(&childrenEnt).
 		Error; err != nil {

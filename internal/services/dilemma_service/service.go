@@ -204,7 +204,7 @@ func (s *dilemmaService) GetNodeByID(
 
 			return nil, berrors.Wrap(op, fmt.Sprintf("node %s not found", nodeID), err)
 		}
-
+		s.log.Debug(fmt.Sprintf("%s: node %+v, err: %s", op, node, err.Error()))
 		return nil, berrors.InternalFromErr(op, err)
 	}
 

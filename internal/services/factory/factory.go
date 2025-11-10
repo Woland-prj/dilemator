@@ -97,7 +97,7 @@ func (f *ServiceFactory) instantiateSessionsService() (sessions_service.SessionS
 
 func (f *ServiceFactory) instantiateDilemmaService() dilemma_service.DilemmaService {
 	if f.dilemmaService == nil {
-		dilemmaRepo := dilemma_repo.NewDilemmaRepositoryAdapter(f.pg)
+		dilemmaRepo := dilemma_repo.NewDilemmaRepositoryAdapter(f.pg, f.logger)
 		f.dilemmaService = dilemma_service.NewDilemmaService(f.logger, dilemmaRepo)
 	}
 
