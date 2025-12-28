@@ -6,4 +6,5 @@ type UpdateDilemmaNodeDto struct {
 	ID    uuid.UUID
 	Name  string
 	Value string
+	Image *FileDto
 }

@@ -44,6 +44,7 @@ func Register(
 	userAPIGroup := apiRouter.Group("/user")
 	{
 		userAPIGroup.Post("/register", c.register)
+		userAPIGroup.Get("/me", middleware.WithAuth(cm), c.getProfile)
 	}
 
 	userComponentsGroup := componentsRouter.Group("/user")
@@ -128,4 +129,36 @@ func (c *UserController) profileBadge(ctx *fiber.Ctx) error {
 	}
 
 	return ui.ProfileBadge(*user).Render(ctx.Context(), ctx)
+}
+
+func (c *UserController) getProfile(ctx *fiber.Ctx) error {
+	requester, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusForbidden, "FORBIDDEN", "unknown requester")
+	}
+
+	user, err := c.s.GetByID(ctx.Context(), requester.GetID())
+	if err != nil {
+		return handleUserError(ctx, err)
+	}
+
+	return ctx.Status(http.StatusOK).JSON(responses.NewUserResponse(user))
+}
+
+func handleUserError(ctx *fiber.Ctx, err error) error {
+	if errors.Is(err, user_errors.ErrUserNotFound) {
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusNotFound,
+			"NOT_FOUND",
+			"user not found",
+		)
+	}
+
+	return responses.ErrorResponse(
+		ctx,
+		http.StatusInternalServerError,
+		"INTERNAL_SERVER_ERROR",
+		"internal server error",
+	)
 }

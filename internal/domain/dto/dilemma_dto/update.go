@@ -7,4 +7,5 @@ type UpdateDilemmaDto struct {
 	Topic     string
 	RootName  string
 	RootValue string
+	RootImage *FileDto
 }

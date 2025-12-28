@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/Woland-prj/dilemator/internal/domain/dto/dilemma_dto"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
@@ -14,8 +15,9 @@ import (
 )
 
 type dilemmaService struct {
-	log  logger.Interface
-	repo DilemmaRepositoryPort
+	log      logger.Interface
+	repo     DilemmaRepositoryPort
+	fileRepo FileRepositoryPort
 }
 
 var _ DilemmaService = (*dilemmaService)(nil)
@@ -23,11 +25,55 @@ var _ DilemmaService = (*dilemmaService)(nil)
 func NewDilemmaService(
 	log logger.Interface,
 	repo DilemmaRepositoryPort,
+	fileRepo FileRepositoryPort,
 ) DilemmaService {
 	return &dilemmaService{
-		log:  log,
-		repo: repo,
+		log:      log,
+		repo:     repo,
+		fileRepo: fileRepo,
 	}
+}
+
+func (s *dilemmaService) saveImage(ctx context.Context, image []byte, contentType string) (*string, error) {
+	const op = "dilemma - dilemmaService - saveImage"
+	if len(image) == 0 {
+		return nil, nil
+	}
+	key, err := s.fileRepo.Save(ctx, image, contentType)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("%s: failed to save image: %v", op, err))
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+	return &key, nil
+}
+
+func (s *dilemmaService) getImageLink(ctx context.Context, imgKey *string) (*string, error) {
+	const op = "dilemma - dilemmaService - getImageLink"
+	if imgKey == nil {
+		return nil, nil
+	}
+	link, err := s.fileRepo.GetAuthorizedDownloadLink(ctx, *imgKey)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("%s: failed to get image link: %v", op, err))
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+	return &link, nil
+}
+
+func (s *dilemmaService) deleteImage(ctx context.Context, imgKey *string) error {
+	const op = "dilemma - dilemmaService - deleteImage"
+	if imgKey == nil {
+		return nil
+	}
+	s.log.Debug(fmt.Sprintf("imgKey %s", *imgKey))
+	if err := s.fileRepo.DeleteByKey(ctx, *imgKey); err != nil {
+		s.log.Error(fmt.Sprintf("%s: failed to delete image: %v", op, err))
+
+		return berrors.InternalFromErr(op, err)
+	}
+	return nil
 }
 
 // CreateDilemma создаёт новую дилемму с корневым узлом.
@@ -37,11 +83,24 @@ func (s *dilemmaService) CreateDilemma(
 ) (*dilemma_entity.Dilemma, error) {
 	const op = "dilemma - dilemmaService - CreateDilemma"
 
+	// Сохраняем изображение
+	imgKey, err := s.saveImage(
+		ctx,
+		req.RootImage.Data,
+		req.RootImage.ContentType,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	s.log.Debug("saved image", slog.Any("key", imgKey))
+
 	rootNode := dilemma_entity.NewDilemmaNode(
 		uuid.New(),
 		uuid.Nil,
 		req.RootName,
 		req.RootValue,
+		imgKey,
 	)
 	dilemma := dilemma_entity.NewDilemma(
 		uuid.New(),
@@ -62,6 +121,12 @@ func (s *dilemmaService) CreateDilemma(
 		s.log.Error(fmt.Sprintf("%s: failed to save dilemma: %v", op, err))
 
 		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	// Получаем ссылку для отображения
+	dilemma.RootNode.Image, err = s.getImageLink(ctx, dilemma.RootNode.Image)
+	if err != nil {
+		return nil, err
 	}
 
 	return dilemma, nil
@@ -85,6 +150,12 @@ func (s *dilemmaService) GetByID(
 		}
 
 		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	// Ссылка на изображение
+	dilemma.RootNode.Image, err = s.getImageLink(ctx, dilemma.RootNode.Image)
+	if err != nil {
+		return nil, err
 	}
 
 	return dilemma, nil
@@ -114,9 +185,23 @@ func (s *dilemmaService) UpdateDilemma(
 	const op = "dilemma - dilemmaService - UpdateDilemma"
 
 	// Получаем текущую дилемму
-	existing, err := s.GetByID(ctx, req.ID)
+	existing, err := s.repo.GetDilemmaWithRoot(ctx, req.ID)
 	if err != nil {
 		return nil, berrors.FromErr(op, err)
+	}
+
+	// Обновляем изображение
+	if req.RootImage != nil && len(req.RootImage.Data) != 0 {
+		newKey, err := s.saveImage(ctx, req.RootImage.Data, req.RootImage.ContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.deleteImage(ctx, existing.RootNode.Image); err != nil {
+			return nil, err
+		}
+
+		existing.RootNode.Image = newKey
 	}
 
 	// Обновляем корневой узел
@@ -135,6 +220,12 @@ func (s *dilemmaService) UpdateDilemma(
 		s.log.Error(fmt.Sprintf("%s: failed to update dilemma: %v", op, err))
 
 		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	// Ссылка на изображение
+	existing.RootNode.Image, err = s.getImageLink(ctx, existing.RootNode.Image)
+	if err != nil {
+		return nil, err
 	}
 
 	return existing, nil
@@ -173,7 +264,23 @@ func (s *dilemmaService) CreateDilemmaNode(
 		return nil, berrors.Wrap(op, "parent node not found", dilemma_errors.ErrNodeNotFound)
 	}
 
-	node := dilemma_entity.NewDilemmaNode(uuid.New(), req.ParentID, req.Name, req.Value)
+	// Сохраеяем изображение
+	imgKey, err := s.saveImage(
+		ctx,
+		req.Image.Data,
+		req.Image.ContentType,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	node := dilemma_entity.NewDilemmaNode(
+		uuid.New(),
+		req.ParentID,
+		req.Name,
+		req.Value,
+		imgKey,
+	)
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to save node: %v", op, err))
@@ -185,6 +292,12 @@ func (s *dilemmaService) CreateDilemmaNode(
 		s.log.Error(fmt.Sprintf("%s: failed to link parent-child: %v", op, err))
 
 		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	// Ссылка на изображение
+	node.Image, err = s.getImageLink(ctx, node.Image)
+	if err != nil {
+		return nil, err
 	}
 
 	return node, nil
@@ -208,6 +321,12 @@ func (s *dilemmaService) GetNodeByID(
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
+	// Ссылка на изображение
+	node.Image, err = s.getImageLink(ctx, node.Image)
+	if err != nil {
+		return nil, err
+	}
+
 	return node, nil
 }
 
@@ -221,7 +340,7 @@ func (s *dilemmaService) GetChildren(
 	children, err := s.repo.GetChildren(ctx, parentID)
 	if err != nil {
 		if errors.Is(err, dilemma_errors.ErrNodeNotFound) {
-			// Родитель может не иметь детей — это не ошибка
+			// Родитель может не иметь детей
 			return []*dilemma_entity.DilemmaNode{}, nil
 		}
 
@@ -238,9 +357,23 @@ func (s *dilemmaService) UpdateDilemmaNode(
 ) (*dilemma_entity.DilemmaNode, error) {
 	const op = "dilemma - dilemmaService - UpdateDilemmaNode"
 
-	node, err := s.GetNodeByID(ctx, req.ID)
+	node, err := s.repo.GetNode(ctx, req.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Обновляем изображение
+	if req.Image != nil && len(req.Image.Data) != 0 {
+		newKey, err := s.saveImage(ctx, req.Image.Data, req.Image.ContentType)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.deleteImage(ctx, node.Image); err != nil {
+			return nil, err
+		}
+
+		node.Image = newKey
 	}
 
 	node.Name = req.Name

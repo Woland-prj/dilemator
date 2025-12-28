@@ -35,15 +35,29 @@ func (r *DilemmaRepositoryAdapter) SaveDilemmaDescriber(ctx context.Context, dil
 
 	dilemmaEnt := pentity.DilemmaEntityFromModel(dilemma)
 
-	if err := r.DB.WithContext(ctx).Create(&dilemmaEnt).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return berrors.FromErr(op, dilemma_errors.ErrDilemmaAlreadyExists)
-		}
+	var existing pentity.DilemmaEntity
 
+	err := r.DB.WithContext(ctx).Select("id").First(&existing, "id = ?", dilemmaEnt.ID).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return berrors.InternalFromErr(op, err)
 	}
 
-	return nil
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := tx.Create(&dilemmaEnt).Error; err != nil {
+				if errors.Is(err, gorm.ErrDuplicatedKey) {
+					return berrors.FromErr(op, dilemma_errors.ErrDilemmaAlreadyExists)
+				}
+				return berrors.InternalFromErr(op, err)
+			}
+		} else {
+			if err := tx.Model(&existing).Updates(&dilemmaEnt).Error; err != nil {
+				return berrors.InternalFromErr(op, err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // GetDilemmaWithRoot загружает дилемму вместе с корневым узлом.
@@ -115,15 +129,29 @@ func (r *DilemmaRepositoryAdapter) SaveNode(ctx context.Context, node *dilemma_e
 
 	nodeEnt := pentity.DilemmaNodeEntityFromModel(node)
 
-	if err := r.DB.WithContext(ctx).Create(&nodeEnt).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return berrors.FromErr(op, dilemma_errors.ErrNodeAlreadyExists)
-		}
+	var existing pentity.DilemmaNodeEntity
 
+	err := r.DB.WithContext(ctx).Select("id").First(&existing, "id = ?", nodeEnt.ID).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return berrors.InternalFromErr(op, err)
 	}
 
-	return nil
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := tx.Create(&nodeEnt).Error; err != nil {
+				if errors.Is(err, gorm.ErrDuplicatedKey) {
+					return berrors.FromErr(op, dilemma_errors.ErrNodeAlreadyExists)
+				}
+				return berrors.InternalFromErr(op, err)
+			}
+		} else {
+			if err := tx.Model(&existing).Updates(&nodeEnt).Error; err != nil {
+				return berrors.InternalFromErr(op, err)
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *DilemmaRepositoryAdapter) GetNode(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error) {

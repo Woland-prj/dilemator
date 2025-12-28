@@ -87,4 +87,10 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="5-add-image-link-column"
+               author="Woland-prj">
+        <addColumn tableName="dilemma_nodes">
+          <column name="image" type="TEXT" />
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

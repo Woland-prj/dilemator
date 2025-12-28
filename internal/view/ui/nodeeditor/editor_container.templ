@@ -10,7 +10,11 @@ templ EditorContainer(dilemma dilemma_entity.Dilemma, node dilemma_entity.Dilemm
 				class="flex items-stretch justify-between w-4/6 rounded-box bg-base-200 border-base-300 border gap-x-4 p-4"
 			>
 				@ScenarioForm(dilemma, node, isNew)
-				@ImagePreview("")
+				if (node.Image != nil) {
+					@ImagePreview(*node.Image)
+				} else {
+					@ImagePreview("")
+				}
 			</div>
 			@ScenarioList(dilemma.ID, node)
 		</div>

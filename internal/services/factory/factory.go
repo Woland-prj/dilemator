@@ -7,6 +7,7 @@ import (
 
 	"github.com/Woland-prj/dilemator/config"
 	"github.com/Woland-prj/dilemator/internal/repo/dilemma_repo"
+	"github.com/Woland-prj/dilemator/internal/repo/file_repo"
 	"github.com/Woland-prj/dilemator/internal/repo/sessions_repo"
 	"github.com/Woland-prj/dilemator/internal/repo/users_repo"
 	"github.com/Woland-prj/dilemator/internal/services/dilemma_service"
@@ -22,7 +23,7 @@ type ServiceFactory struct {
 	logger logger.Interface
 	pg     *postgres.Postgres
 	hash   *hashing.HashProvider
-	// s3Repo *s3.FileS3RepositoryAdapter
+	s3Repo *file_repo.FileS3RepositoryAdapter
 
 	// Кэширование сервисов (опционально)
 	userService    users_service.UserService
@@ -41,18 +42,19 @@ func NewServiceFactory(cfg *config.Config, l logger.Interface) (*ServiceFactory,
 
 	hash := hashing.NewHashProvider(cfg.App.PassCost)
 
-	// s3Repo, err := getS3Repo(cfg)
-	// if err != nil {
-	// 	pg.Close()
+	s3Repo, err := getS3Repo(cfg)
+	if err != nil {
+		pg.Close()
 
-	// 	return nil, fmt.Errorf("failed to init S3 repo: %w", err)
-	// }
+		return nil, fmt.Errorf("failed to init S3 repo: %w", err)
+	}
 
 	return &ServiceFactory{
 		cfg:    cfg,
 		logger: l,
 		pg:     pg,
 		hash:   hash,
+		s3Repo: s3Repo,
 	}, nil
 }
 
@@ -98,7 +100,7 @@ func (f *ServiceFactory) instantiateSessionsService() (sessions_service.SessionS
 func (f *ServiceFactory) instantiateDilemmaService() dilemma_service.DilemmaService {
 	if f.dilemmaService == nil {
 		dilemmaRepo := dilemma_repo.NewDilemmaRepositoryAdapter(f.pg, f.logger)
-		f.dilemmaService = dilemma_service.NewDilemmaService(f.logger, dilemmaRepo)
+		f.dilemmaService = dilemma_service.NewDilemmaService(f.logger, dilemmaRepo, f.s3Repo)
 	}
 
 	return f.dilemmaService
@@ -167,19 +169,19 @@ func getPgConf(cfg *config.Config) *postgres.Config {
 	}
 }
 
-// func getS3Repo(cfg *config.Config) (*s3.FileS3RepositoryAdapter, error) {
-// 	s3FileAdapter, err := s3.NewFileS3Repository(
-// 		cfg.S3.AccessKey,
-// 		cfg.S3.SecretKey,
-// 		cfg.S3.BucketName,
-// 		cfg.S3.Region,
-// 		cfg.S3.Endpoint,
-// 		cfg.S3.BucketDomain,
-// 		cfg.S3.PresignLifetimeHours,
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func getS3Repo(cfg *config.Config) (*file_repo.FileS3RepositoryAdapter, error) {
+	s3FileAdapter, err := file_repo.NewFileS3Repository(
+		cfg.S3.AccessKey,
+		cfg.S3.SecretKey,
+		cfg.S3.BucketName,
+		cfg.S3.Region,
+		cfg.S3.Endpoint,
+		cfg.S3.BucketDomain,
+		cfg.S3.PresignLifetimeHours,
+	)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return s3FileAdapter, nil
-// }
+	return s3FileAdapter, nil
+}

@@ -5,13 +5,13 @@
     "htmx-ext-json-enc": "^2.0.3",
     "htmx.org": "^2.0.2",
     "preact": "^10.27.2",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "daisyui": "^5.3.9",
+    "tailwindcss": "^4.1.16"
   },
   "devDependencies": {
     "@types/uuid": "^10.0.0",
-    "daisyui": "^5.3.9",
     "esbuild": "0.23.1",
-    "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
   },
   "scripts": {

@@ -12,11 +12,17 @@ import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 import "github.com/google/uuid"
 import "fmt"
 
-func getURL(isRoot bool, did uuid.UUID, pid uuid.UUID) string {
+func getURL(isRoot bool, isUpdate bool, did uuid.UUID, id uuid.UUID) string {
 	if isRoot {
+		if isUpdate {
+			return fmt.Sprintf("/api/dilemma?did=%s", did.String())
+		}
 		return "/api/dilemma"
 	} else {
-		return fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s", did.String(), pid.String())
+		if isUpdate {
+			return fmt.Sprintf("/api/dilemma/node?did=%s&nid=%s", did.String(), id.String())
+		}
+		return fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s", did.String(), id.String())
 	}
 }
 
@@ -41,7 +47,7 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script src=\"/assets/scenario_form_interact.js\" type=\"application/javascript\"></script><form class=\"flex flex-col h-full w-full gap-y-4\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script src=\"/assets/scenario_form_interact.js\"></script><form class=\"flex flex-col h-full w-full gap-y-4\" id=\"editor-form\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,9 +57,9 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ParentID))
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getURL(node.ParentID == uuid.Nil, false, dilemma.ID, node.ParentID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 20, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 27, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -69,9 +75,9 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ID))
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(getURL(node.ParentID == uuid.Nil, true, dilemma.ID, node.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 22, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 29, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -82,7 +88,7 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " hx-trigger=\"submit\" hx-ext=\"json-enc\" hx-target=\"#content-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " enctype=\"multipart/form-data\" hx-trigger=\"submit\" hx-target=\"#content-container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -94,7 +100,7 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(dilemma.Topic)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 34, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 41, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -112,7 +118,7 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dilemma.Topic)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 38, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 45, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -130,7 +136,7 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(node.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 46, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 53, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -143,13 +149,13 @@ func ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNod
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(node.Value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 56, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/form.templ`, Line: 63, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</textarea> <label class=\"label\">Scenario image</label> <input type=\"file\" name=\"image\" class=\"file-input w-full\"> <button type=\"submit\" class=\"btn btn-neutral mt-4\">Save scenario</button></fieldset></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</textarea> <label class=\"label\">Scenario image</label> <input type=\"file\" name=\"image\" class=\"file-input w-full\"> <button type=\"submit\" class=\"btn btn-neutral mt-4 btn-disabled\">Save scenario</button></fieldset></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

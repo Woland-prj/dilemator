@@ -53,6 +53,7 @@ type DilemmaNodeEntity struct {
 	ID       uuid.UUID `gorm:"primaryKey;column:id;type:uuid"`
 	Name     string    `gorm:"column:name;type:text;not null"`
 	Value    string    `gorm:"column:value;type:text;not null"`
+	Image    *string   `gorm:"column:image;type:text"`
 	ParentID uuid.UUID `gorm:"-"`
 
 	// Связь "один ко многим" через join-таблицу node_children
@@ -74,6 +75,7 @@ func (e *DilemmaNodeEntity) ToModel() *dilemma_entity.DilemmaNode {
 		Name:     e.Name,
 		Value:    e.Value,
 		ParentID: e.ParentID,
+		Image:    e.Image,
 	}
 
 	if len(e.Children) > 0 {
@@ -94,6 +96,7 @@ func DilemmaNodeEntityFromModel(n *dilemma_entity.DilemmaNode) *DilemmaNodeEntit
 		ID:    n.ID,
 		Name:  n.Name,
 		Value: n.Value,
+		Image: n.Image,
 	}
 }
 

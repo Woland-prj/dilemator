@@ -6,4 +6,5 @@ type CreateDilemmaNodeDto struct {
 	ParentID uuid.UUID
 	Name     string
 	Value    string
+	Image    *FileDto
 }

@@ -4,25 +4,32 @@ import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 import "github.com/google/uuid"
 import "fmt"
 
-func getURL(isRoot bool, did uuid.UUID, pid uuid.UUID) string {
+func getURL(isRoot bool, isUpdate bool, did uuid.UUID, id uuid.UUID) string {
 	if isRoot {
+		if isUpdate {
+			return fmt.Sprintf("/api/dilemma?did=%s", did.String())
+		}
 		return "/api/dilemma"
 	} else {
-		return fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s", did.String(), pid.String())
+		if isUpdate {
+			return fmt.Sprintf("/api/dilemma/node?did=%s&nid=%s", did.String(), id.String())
+		}
+		return fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s", did.String(), id.String())
 	}
 }
 
 templ ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNode, isNew bool) {
-	<script src="/assets/scenario_form_interact.js" type="application/javascript"></script>
+	<script src="/assets/scenario_form_interact.js"></script>
 	<form
 		class="flex flex-col h-full w-full gap-y-4"
+		id="editor-form"
 		if isNew {
-			hx-post={ getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ParentID) }
+			hx-post={ getURL(node.ParentID == uuid.Nil, false, dilemma.ID, node.ParentID) }
 		} else {
-			hx-put={ getURL(node.ParentID == uuid.Nil, dilemma.ID, node.ID) }
+			hx-put={ getURL(node.ParentID == uuid.Nil, true, dilemma.ID, node.ID) }
 		}
+		enctype="multipart/form-data"
 		hx-trigger="submit"
-		hx-ext="json-enc"
 		hx-target="#content-container"
 	>
 		if (node.ParentID == uuid.Nil) {
@@ -62,7 +69,7 @@ templ ScenarioForm(dilemma dilemma_entity.Dilemma, node dilemma_entity.DilemmaNo
 			/>
 			<button
 				type="submit"
-				class="btn btn-neutral mt-4"
+				class="btn btn-neutral mt-4 btn-disabled"
 			>
 				Save scenario
 			</button>

@@ -2,9 +2,12 @@ package dilemma_router
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
 
+	"github.com/Woland-prj/dilemator/internal/domain/dto/dilemma_dto"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/security_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
@@ -57,8 +60,11 @@ func Register(
 
 	dilemmaAPIGroup := apiRouter.Group("/dilemma")
 	{
+		dilemmaAPIGroup.Get("", middleware.WithAuth(cm), c.getDilemmas)
 		dilemmaAPIGroup.Post("", middleware.WithAuth(cm), c.createDilemma)
+		dilemmaAPIGroup.Put("", middleware.WithAuth(cm), c.updateDilemma)
 		dilemmaAPIGroup.Post("/node", middleware.WithAuth(cm), c.createDilemmaNode)
+		dilemmaAPIGroup.Put("/node", middleware.WithAuth(cm), c.updateDilemmaNode)
 	}
 
 	dilemmaComponentsGroup := componentsRouter.Group("/dilemma")
@@ -79,7 +85,67 @@ type DilemmaController struct {
 func (c *DilemmaController) createDilemma(ctx *fiber.Ctx) error {
 	const op = "http - DilemmaController - createDilemma"
 
+	requester, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+	}
+
+	ctx.Request().WriteTo(os.Stdout)
+
 	var body requests.CreateDilemma
+
+	if err := ctx.BodyParser(&body); err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "invalid request body")
+	}
+
+	if err := c.validate(body, ctx, op); err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+		return err
+	}
+
+	img, err := readFile(ctx, "image")
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+		return err
+	}
+
+	c.l.Debug("dilema to save:", slog.Any("dilemma", body.ToModel(requester.GetID(), img)))
+
+	dilemma, err := c.s.CreateDilemma(ctx.Context(), body.ToModel(requester.GetID(), img))
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+
+		if errors.Is(err, dilemma_errors.ErrDilemmaAlreadyExists) {
+			return responses.ErrorResponse(
+				ctx,
+				http.StatusConflict,
+				"CONFLICT",
+				err.Error(),
+			)
+		}
+
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusInternalServerError,
+			"INTERNAL_SERVER_ERROR",
+			"internal server error",
+		)
+	}
+
+	return nodeeditor.EditorContainer(*dilemma, *dilemma.RootNode, false).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) updateDilemma(ctx *fiber.Ctx) error {
+	const op = "http - DilemmaController - updateDilemma"
+
+	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+	}
+
+	var body requests.UpdateDilemma
 
 	if err := ctx.BodyParser(&body); err != nil {
 		c.l.Debug(berrors.FromErr(op, err).Error())
@@ -91,20 +157,32 @@ func (c *DilemmaController) createDilemma(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	requester, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
-	if !ok {
-		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+	img, err := readFile(ctx, "image")
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+		return err
 	}
 
-	dilemma, err := c.s.CreateDilemma(ctx.Context(), body.ToModel(requester.GetID()))
+	didStr := ctx.Query("did")
+
+	if didStr == "" {
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "did not set")
+	}
+
+	did, err := uuid.Parse(didStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	dilemma, err := c.s.UpdateDilemma(ctx.Context(), body.ToModel(did, img))
 	if err != nil {
 		c.l.Debug(berrors.FromErr(op, err).Error())
 
-		if errors.Is(err, dilemma_errors.ErrDilemmaAlreadyExists) {
+		if errors.Is(err, dilemma_errors.ErrDilemmaNotFound) {
 			return responses.ErrorResponse(
 				ctx,
-				http.StatusConflict,
-				"CONFLICT",
+				http.StatusNotFound,
+				"NOT_FOUND",
 				err.Error(),
 			)
 		}
@@ -154,6 +232,13 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.validate(body, ctx, op); err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+		return err
+	}
+
+	img, err := readFile(ctx, "image")
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
 		return err
 	}
 
@@ -162,7 +247,7 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
-	node, err := c.s.CreateDilemmaNode(ctx.Context(), body.ToModel(pid))
+	node, err := c.s.CreateDilemmaNode(ctx.Context(), body.ToModel(pid, img))
 	if err != nil {
 		c.l.Debug(berrors.FromErr(op, err).Error())
 
@@ -174,6 +259,73 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 				err.Error(),
 			)
 		}
+
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusInternalServerError,
+			"INTERNAL_SERVER_ERROR",
+			"internal server error",
+		)
+	}
+
+	return nodeeditor.EditorContainer(*dilemma, *node, false).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) updateDilemmaNode(ctx *fiber.Ctx) error {
+	const op = "http - DilemmaController - updateDilemmaNode"
+
+	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+	}
+
+	didStr := ctx.Query("did")
+	nidStr := ctx.Query("nid")
+
+	if didStr == "" {
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "empty params")
+	}
+
+	if nidStr == "" {
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "empty params")
+	}
+
+	did, err := uuid.Parse(didStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	nid, err := uuid.Parse(nidStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	var body requests.UpdateNode
+
+	if err := ctx.BodyParser(&body); err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "invalid request body")
+	}
+
+	if err := c.validate(body, ctx, op); err != nil {
+		return err
+	}
+
+	img, err := readFile(ctx, "image")
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
+		return err
+	}
+
+	dilemma, err := c.s.GetByID(ctx.Context(), did)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	node, err := c.s.UpdateDilemmaNode(ctx.Context(), *body.ToModel(nid, img))
+	if err != nil {
+		c.l.Debug(berrors.FromErr(op, err).Error())
 
 		return responses.ErrorResponse(
 			ctx,
@@ -203,6 +355,25 @@ func (c *DilemmaController) dashboard(ctx *fiber.Ctx) error {
 	}
 
 	return ui.Dashboard(dilemmas).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) getDilemmas(ctx *fiber.Ctx) error {
+	requester, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "FORBIDDEN", "unknown requester")
+	}
+
+	page, size, err := parsePagination(ctx)
+	if err != nil {
+		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", err.Error())
+	}
+
+	dilemmas, err := c.s.GetByOwner(ctx.Context(), requester.GetID(), page, size)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	return ctx.Status(http.StatusOK).JSON(responses.NewDilemmaResponseList(dilemmas))
 }
 
 func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
@@ -290,4 +461,38 @@ func (c *DilemmaController) validate(s interface{}, ctx *fiber.Ctx, op string) e
 	}
 
 	return nil
+}
+
+func readFile(c *fiber.Ctx, fieldname string) (*dilemma_dto.FileDto, error) {
+	file, err := c.FormFile(fieldname)
+	if err != nil {
+		return nil, responses.ErrorResponse(
+			c, http.StatusBadRequest,
+			"BAD_REQUEST", "no file present")
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		return nil, responses.ErrorResponse(
+			c, http.StatusUnprocessableEntity,
+			"UNPROCESSABLE_ENTITY", "error opening file")
+	}
+	defer openedFile.Close()
+
+	data, err := io.ReadAll(openedFile)
+	if err != nil {
+		return nil, responses.ErrorResponse(
+			c, http.StatusUnprocessableEntity,
+			"UNPROCESSABLE_ENTITY", "error reading file")
+	}
+
+	contentType := file.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = http.DetectContentType(data)
+	}
+
+	return &dilemma_dto.FileDto{
+		Data:        data,
+		ContentType: contentType,
+	}, nil
 }

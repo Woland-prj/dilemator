@@ -22,3 +22,11 @@ type DilemmaRepositoryPort interface {
 	GetChildren(ctx context.Context, parentID uuid.UUID) ([]*dilemma_entity.DilemmaNode, error)
 	LinkParentChild(ctx context.Context, parentID, childID uuid.UUID) error
 }
+
+// FileRepositoryPort defines a contract for interacting with file storage.
+type FileRepositoryPort interface {
+	Save(ctx context.Context, file []byte, contentType string) (string, error)
+	DeleteByKey(ctx context.Context, key string) error
+	GetDownloadLink(ctx context.Context, key string) (string, error)
+	GetAuthorizedDownloadLink(ctx context.Context, key string) (string, error)
+}
