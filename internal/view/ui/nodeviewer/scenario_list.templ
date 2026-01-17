@@ -1,0 +1,26 @@
+package nodeviewer
+
+import "github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
+import "github.com/google/uuid"
+import "fmt"
+
+templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
+	if len(node.Scenarios) > 0 {
+		<div class="w-1/6">
+			<ul class="menu bg-base-200 rounded-box">
+				if len(node.Scenarios) > 0 {
+					<li class="menu-title">Next Scenarios:</li>
+					for _, v := range node.Scenarios {
+						<li>
+							<a
+								hx-get={ fmt.Sprintf("/components/dilemma/viewer?did=%s&nid=%s", dilemmaID, v.ID) }
+								hx-target="#viewer_container"
+								hx-swap="outerHTML"
+							>{ v.Name }</a>
+						</li>
+					}
+				}
+			</ul>
+		</div>
+	}
+}

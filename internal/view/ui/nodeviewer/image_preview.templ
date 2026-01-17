@@ -1,0 +1,15 @@
+package nodeviewer
+
+templ ImagePreview(src string) {
+	<div
+		class="preview-container grow-0 w-1/2 h-auto aspect-square bg-base-100 rounded-box"
+	>
+		if src != "" {
+			<img
+				src={ src }
+				alt="image"
+				class="object-cover w-full h-full rounded-box"
+			/>
+		}
+	</div>
+}

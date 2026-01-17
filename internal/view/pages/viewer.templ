@@ -1,0 +1,17 @@
+package pages
+
+import "github.com/Woland-prj/dilemator/internal/view/layout"
+import "github.com/Woland-prj/dilemator/internal/view/ui"
+import "fmt"
+
+templ Viewer(menu ui.MenuProps, did string) {
+	@layout.Base(layout.BaseProps{Title: "Dilemator - editing", Menu: menu, DrawUserBage: true}) {
+		<div
+			class="container mx-auto md:px-20"
+			hx-get={ fmt.Sprintf("/components/dilemma/viewer?did=%s", did) }
+			hx-target="#content-container"
+			hx-swap="innerHTML"
+			hx-trigger="load delay:1s"
+		></div>
+	}
+}

@@ -45,6 +45,10 @@ run: deps swag-v1 ## Run application
 	go mod download
 	CGO_ENABLED=0 env $$(grep -v '^#' .env.example | xargs) go run ./cmd/app
 
+.PHONY: build-image
+build-image: ## Run building docker image
+	docker buildx build -f Dockerfile --platform linux/arm64 -t dilemator:latest .
+
 .PHONY: build
 build: build-templ build-css build-js build-app ## build all stuff
 

@@ -21,6 +21,7 @@ import (
 	"github.com/Woland-prj/dilemator/internal/services/factory"
 	"github.com/Woland-prj/dilemator/internal/view/ui"
 	"github.com/Woland-prj/dilemator/internal/view/ui/nodeeditor"
+	"github.com/Woland-prj/dilemator/internal/view/ui/nodeviewer"
 	"github.com/Woland-prj/dilemator/pkg/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -71,6 +72,7 @@ func Register(
 	{
 		dilemmaComponentsGroup.Get("/dashboard", middleware.WithAuth(cm), c.dashboard)
 		dilemmaComponentsGroup.Get("/editor", middleware.WithAuth(cm), c.editor)
+		dilemmaComponentsGroup.Get("/viewer", middleware.WithAuth(cm), c.viewer)
 	}
 
 	return nil
@@ -426,6 +428,46 @@ func (c *DilemmaController) editor(ctx *fiber.Ctx) error {
 	}
 
 	return nodeeditor.EditorContainer(*dilemma, *node, false).Render(ctx.Context(), ctx)
+}
+
+func (c *DilemmaController) viewer(ctx *fiber.Ctx) error {
+	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
+	if !ok {
+		return ui.ErrorBlock(security_errors.ErrSession).Render(ctx.Context(), ctx)
+	}
+
+	didStr := ctx.Query("did")
+	nidStr := ctx.Query("nid")
+
+	if didStr == "" {
+		return ui.ErrorBlock(errors.New("dilemma id is not set")).Render(ctx.Context(), ctx)
+	}
+
+	did, err := uuid.Parse(didStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	dilemma, err := c.s.GetByID(ctx.Context(), did)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	if nidStr == "" {
+		return nodeviewer.ViewerContainer(*dilemma, *dilemma.RootNode).Render(ctx.Context(), ctx)
+	}
+
+	nid, err := uuid.Parse(nidStr)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	node, err := c.s.GetNodeByID(ctx.Context(), nid)
+	if err != nil {
+		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
+	}
+
+	return nodeviewer.ViewerContainer(*dilemma, *node).Render(ctx.Context(), ctx)
 }
 
 func parsePagination(ctx *fiber.Ctx) (page, size int, err error) {

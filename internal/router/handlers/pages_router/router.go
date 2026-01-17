@@ -40,6 +40,11 @@ func Register(
 		editorGroup.Get("", c.editor)
 	}
 
+	viewerGroup := router.Group("/viewer")
+	{
+		viewerGroup.Get("", c.viewer)
+	}
+
 	return nil
 }
 
@@ -88,6 +93,28 @@ func (c PagesController) editor(ctx *fiber.Ctx) error {
 	}
 
 	return pages.Editor(ui.MenuProps{
+		Links: data.EditorMenuLinks(),
+	}, didStr).Render(ctx.Context(), ctx)
+}
+
+func (c PagesController) viewer(ctx *fiber.Ctx) error {
+	ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
+	didStr := ctx.Query("did")
+
+	if didStr == "" {
+		return pages.Viewer(ui.MenuProps{
+			Links: data.EditorMenuLinks(),
+		}, "").Render(ctx.Context(), ctx)
+	}
+
+	_, err := uuid.Parse(didStr)
+	if err != nil {
+		return pages.Viewer(ui.MenuProps{
+			Links: data.EditorMenuLinks(),
+		}, "").Render(ctx.Context(), ctx)
+	}
+
+	return pages.Viewer(ui.MenuProps{
 		Links: data.EditorMenuLinks(),
 	}, didStr).Render(ctx.Context(), ctx)
 }
