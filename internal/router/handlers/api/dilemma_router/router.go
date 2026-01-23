@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/Woland-prj/dilemator/internal/domain/dto/dilemma_dto"
 	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
@@ -205,14 +206,25 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 
 	_, ok := ctx.Locals(middleware.AuthContextKey).(*security_entity.UserDetails)
 	if !ok {
-		return responses.ErrorResponse(ctx, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "internal server error")
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusInternalServerError,
+			"INTERNAL_SERVER_ERROR",
+			"internal server error",
+		)
 	}
 
 	didStr := ctx.Query("did")
 	pidStr := ctx.Query("pid")
+	useAiStr := ctx.Query("ai")
 
 	if didStr == "" || pidStr == "" {
-		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "empty params")
+		return responses.ErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			"BAD_REQUEST",
+			"empty params",
+		)
 	}
 
 	did, err := uuid.Parse(didStr)
@@ -225,23 +237,18 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
-	var body requests.CreateNode
-
-	if err := ctx.BodyParser(&body); err != nil {
-		c.l.Debug(berrors.FromErr(op, err).Error())
-
-		return responses.ErrorResponse(ctx, http.StatusBadRequest, "BAD_REQUEST", "invalid request body")
-	}
-
-	if err := c.validate(body, ctx, op); err != nil {
-		c.l.Debug(berrors.FromErr(op, err).Error())
-		return err
-	}
-
-	img, err := readFile(ctx, "image")
-	if err != nil {
-		c.l.Debug(berrors.FromErr(op, err).Error())
-		return err
+	// --- PARSE BOOLEAN QUERY PARAM ---
+	useAi := false
+	if useAiStr != "" {
+		useAi, err = strconv.ParseBool(useAiStr)
+		if err != nil {
+			return responses.ErrorResponse(
+				ctx,
+				http.StatusBadRequest,
+				"BAD_REQUEST",
+				"invalid ai parameter, must be boolean",
+			)
+		}
 	}
 
 	dilemma, err := c.s.GetByID(ctx.Context(), did)
@@ -249,7 +256,39 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 		return ui.ErrorBlock(err).Render(ctx.Context(), ctx)
 	}
 
-	node, err := c.s.CreateDilemmaNode(ctx.Context(), body.ToModel(pid, img))
+	var node *dilemma_entity.DilemmaNode
+
+	// --- CONDITIONAL SERVICE CALL ---
+	if useAi {
+		node, err = c.s.GenerateDilemmaNode(ctx.Context(), pid)
+	} else {
+		var body requests.CreateNode
+		if err := ctx.BodyParser(&body); err != nil {
+			c.l.Debug(berrors.FromErr(op, err).Error())
+			return responses.ErrorResponse(
+				ctx,
+				http.StatusBadRequest,
+				"BAD_REQUEST",
+				"invalid request body",
+			)
+		}
+
+		if err := c.validate(body, ctx, op); err != nil {
+			c.l.Debug(berrors.FromErr(op, err).Error())
+			return err
+		}
+
+		img, err := readFile(ctx, "image")
+		if err != nil {
+			c.l.Debug(berrors.FromErr(op, err).Error())
+			return err
+		}
+		node, err = c.s.CreateDilemmaNode(
+			ctx.Context(),
+			body.ToModel(pid, img),
+		)
+	}
+
 	if err != nil {
 		c.l.Debug(berrors.FromErr(op, err).Error())
 
@@ -270,7 +309,9 @@ func (c *DilemmaController) createDilemmaNode(ctx *fiber.Ctx) error {
 		)
 	}
 
-	return nodeeditor.EditorContainer(*dilemma, *node, false).Render(ctx.Context(), ctx)
+	return nodeeditor.
+		EditorContainer(*dilemma, *node, false).
+		Render(ctx.Context(), ctx)
 }
 
 func (c *DilemmaController) updateDilemmaNode(ctx *fiber.Ctx) error {

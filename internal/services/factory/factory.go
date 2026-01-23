@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/Woland-prj/dilemator/config"
+	"github.com/Woland-prj/dilemator/internal/ai/gigachat_adapter"
 	"github.com/Woland-prj/dilemator/internal/repo/dilemma_repo"
 	"github.com/Woland-prj/dilemator/internal/repo/file_repo"
 	"github.com/Woland-prj/dilemator/internal/repo/sessions_repo"
@@ -24,6 +25,7 @@ type ServiceFactory struct {
 	pg     *postgres.Postgres
 	hash   *hashing.HashProvider
 	s3Repo *file_repo.FileS3RepositoryAdapter
+	aiApi  *gigachat_adapter.GigaChatAiAPI
 
 	// Кэширование сервисов (опционально)
 	userService    users_service.UserService
@@ -100,7 +102,14 @@ func (f *ServiceFactory) instantiateSessionsService() (sessions_service.SessionS
 func (f *ServiceFactory) instantiateDilemmaService() dilemma_service.DilemmaService {
 	if f.dilemmaService == nil {
 		dilemmaRepo := dilemma_repo.NewDilemmaRepositoryAdapter(f.pg, f.logger)
-		f.dilemmaService = dilemma_service.NewDilemmaService(f.logger, dilemmaRepo, f.s3Repo)
+		if f.aiApi == nil {
+			aiApi, err := gigachat_adapter.NewGigaChatAiAPI(f.cfg.GigaChat.APIKey, f.cfg.GigaChat.PromptsPath)
+			if err != nil {
+				panic(err)
+			}
+			f.aiApi = aiApi
+		}
+		f.dilemmaService = dilemma_service.NewDilemmaService(f.logger, dilemmaRepo, f.s3Repo, f.aiApi)
 	}
 
 	return f.dilemmaService

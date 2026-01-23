@@ -16,6 +16,7 @@ type DilemmaNode struct {
 	Value     string
 	Image     *string
 	Scenarios []*Scenario
+	Parent    *DilemmaNode
 }
 
 type Scenario struct {

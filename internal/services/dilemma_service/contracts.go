@@ -22,4 +22,5 @@ type DilemmaService interface {
 	GetNodeByID(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error)
 	UpdateDilemmaNode(ctx context.Context, req dilemma_dto.UpdateDilemmaNodeDto) (*dilemma_entity.DilemmaNode, error)
 	DeleteDilemmaNode(ctx context.Context, nodeID uuid.UUID) error
+	GenerateDilemmaNode(ctx context.Context, parentID uuid.UUID) (*dilemma_entity.DilemmaNode, error)
 }

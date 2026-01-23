@@ -38,5 +38,26 @@ templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
 				></path>
 			</svg>
 		</button>
+		<button
+			class={ fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil)) }
+			hx-post={ fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s&ai=true", dilemmaID.String(), node.ID.String()) }
+			hx-target="#content-container"
+			hx-swap="innerHTML"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-5 w-5"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 4v16m8-8H4"
+				></path>
+			</svg>
+		</button>
 	</div>
 }

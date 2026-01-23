@@ -9,13 +9,14 @@ import (
 type (
 	// Config -.
 	Config struct {
-		App     App
-		HTTP    HTTP
-		Log     Log
-		PG      PG
-		S3      S3
-		Metrics Metrics
-		Swagger Swagger
+		App      App
+		HTTP     HTTP
+		Log      Log
+		PG       PG
+		S3       S3
+		Metrics  Metrics
+		Swagger  Swagger
+		GigaChat GigaChat
 	}
 
 	// App -.
@@ -80,6 +81,12 @@ type (
 	// Swagger -.
 	Swagger struct {
 		Enabled bool `env:"SWAGGER_ENABLED" envDefault:"false"`
+	}
+
+	// GigaChat -.
+	GigaChat struct {
+		APIKey      string `env:"GIGACHAT_API_KEY,required"`
+		PromptsPath string `env:"GIGACHAT_PROMPTS_PATH,required"`
 	}
 )
 

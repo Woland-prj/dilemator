@@ -273,3 +273,82 @@ func (r *DilemmaRepositoryAdapter) LinkParentChild(ctx context.Context, parentID
 
 	return nil
 }
+
+func (r *DilemmaRepositoryAdapter) GetNodeWithParents(
+	ctx context.Context,
+	nodeID uuid.UUID,
+) (*dilemma_entity.DilemmaNode, error) {
+	const op = "repo - DilemmaRepositoryAdapter - GetNodeWithParents"
+
+	type row struct {
+		ID    uuid.UUID
+		Name  string
+		Value string
+		Image *string
+		Depth int
+	}
+
+	const query = `
+WITH RECURSIVE node_path AS (
+    SELECT
+        dn.id,
+        dn.name,
+        dn.value,
+        dn.image,
+        0 AS depth
+    FROM dilemma_nodes dn
+    WHERE dn.id = ?
+
+    UNION ALL
+
+    SELECT
+        parent.id,
+        parent.name,
+        parent.value,
+        parent.image,
+        np.depth + 1 AS depth
+    FROM node_path np
+    JOIN node_childrens nc ON nc.child_id = np.id
+    JOIN dilemma_nodes parent ON parent.id = nc.node_id
+)
+SELECT *
+FROM node_path
+ORDER BY depth ASC;
+`
+
+	var rows []row
+	if err := r.DB.WithContext(ctx).
+		Raw(query, nodeID).
+		Scan(&rows).
+		Error; err != nil {
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	if len(rows) == 0 {
+		return nil, berrors.FromErr(op, dilemma_errors.ErrNodeNotFound)
+	}
+
+	// собираем узлы
+	nodes := make([]*dilemma_entity.DilemmaNode, len(rows))
+	for i, r := range rows {
+		nodes[i] = &dilemma_entity.DilemmaNode{
+			ID:    r.ID,
+			Name:  r.Name,
+			Value: r.Value,
+			Image: r.Image,
+		}
+	}
+
+	// связываем Parent / ParentID
+	for i := 0; i < len(nodes)-1; i++ {
+		nodes[i].Parent = nodes[i+1]
+		nodes[i].ParentID = nodes[i+1].ID
+	}
+
+	// корень
+	last := nodes[len(nodes)-1]
+	last.Parent = nil
+	last.ParentID = uuid.Nil
+
+	return nodes[0], nil
+}

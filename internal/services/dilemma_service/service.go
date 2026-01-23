@@ -15,9 +15,10 @@ import (
 )
 
 type dilemmaService struct {
-	log      logger.Interface
-	repo     DilemmaRepositoryPort
-	fileRepo FileRepositoryPort
+	log           logger.Interface
+	repo          DilemmaRepositoryPort
+	fileRepo      FileRepositoryPort
+	chatGenerator ChatGeneratorPort
 }
 
 var _ DilemmaService = (*dilemmaService)(nil)
@@ -26,11 +27,13 @@ func NewDilemmaService(
 	log logger.Interface,
 	repo DilemmaRepositoryPort,
 	fileRepo FileRepositoryPort,
+	chatGenerator ChatGeneratorPort,
 ) DilemmaService {
 	return &dilemmaService{
-		log:      log,
-		repo:     repo,
-		fileRepo: fileRepo,
+		log:           log,
+		repo:          repo,
+		fileRepo:      fileRepo,
+		chatGenerator: chatGenerator,
 	}
 }
 
@@ -381,6 +384,45 @@ func (s *dilemmaService) UpdateDilemmaNode(
 
 	if err := s.repo.SaveNode(ctx, node); err != nil {
 		s.log.Error(fmt.Sprintf("%s: failed to update node: %v", op, err))
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	return node, nil
+}
+
+func (s *dilemmaService) GenerateDilemmaNode(
+	ctx context.Context,
+	parentID uuid.UUID,
+) (*dilemma_entity.DilemmaNode, error) {
+	const op = "dilemma - dilemmaService - GenerateDilemmaNode"
+
+	parentNode, err := s.repo.GetNodeWithParents(ctx, parentID)
+	if err != nil {
+		return nil, berrors.Wrap(op, "parent node not found", err)
+	}
+
+	generatedNode, err := s.chatGenerator.GenerateNode(ctx, parentNode)
+	if err != nil {
+		return nil, berrors.Wrap(op, "failed to generate node", err)
+	}
+
+	node := dilemma_entity.NewDilemmaNode(
+		uuid.New(),
+		parentID,
+		generatedNode.Name,
+		generatedNode.Value,
+		nil,
+	)
+
+	if err := s.repo.SaveNode(ctx, node); err != nil {
+		s.log.Error(fmt.Sprintf("%s: failed to save node: %v", op, err))
+
+		return nil, berrors.InternalFromErr(op, err)
+	}
+
+	if err := s.repo.LinkParentChild(ctx, parentID, node.ID); err != nil {
+		s.log.Error(fmt.Sprintf("%s: failed to link parent-child: %v", op, err))
 
 		return nil, berrors.InternalFromErr(op, err)
 	}

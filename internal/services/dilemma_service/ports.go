@@ -9,6 +9,10 @@ import (
 
 //go:generate mockgen -destination=mocks_test.go -package dilemma_service_test . DilemmaRepositoryPort
 
+type ChatGeneratorPort interface {
+	GenerateNode(ctx context.Context, parentNode *dilemma_entity.DilemmaNode) (*dilemma_entity.DilemmaNode, error)
+}
+
 type DilemmaRepositoryPort interface {
 	SaveDilemmaDescriber(ctx context.Context, dilemma *dilemma_entity.Dilemma) error
 	GetDilemmaWithRoot(ctx context.Context, dilemmaID uuid.UUID) (*dilemma_entity.Dilemma, error)
@@ -17,6 +21,7 @@ type DilemmaRepositoryPort interface {
 
 	SaveNode(ctx context.Context, node *dilemma_entity.DilemmaNode) error
 	GetNode(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error)
+	GetNodeWithParents(ctx context.Context, nodeID uuid.UUID) (*dilemma_entity.DilemmaNode, error)
 	DeleteNode(ctx context.Context, nodeID uuid.UUID) error
 
 	GetChildren(ctx context.Context, parentID uuid.UUID) ([]*dilemma_entity.DilemmaNode, error)

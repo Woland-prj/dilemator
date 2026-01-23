@@ -39,7 +39,7 @@ func ViewerContainer(dilemma dilemma_entity.Dilemma, node dilemma_entity.Dilemma
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex items-stretch justify-between w-4/6 rounded-box bg-base-200 border-base-300 border gap-x-4 p-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex items-stretch w-[60vw] justify-between rounded-box bg-base-200 border-base-300 border gap-x-4 p-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
