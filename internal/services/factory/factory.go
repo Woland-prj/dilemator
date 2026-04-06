@@ -103,7 +103,7 @@ func (f *ServiceFactory) instantiateDilemmaService() dilemma_service.DilemmaServ
 	if f.dilemmaService == nil {
 		dilemmaRepo := dilemma_repo.NewDilemmaRepositoryAdapter(f.pg, f.logger)
 		if f.aiApi == nil {
-			aiApi, err := gigachat_adapter.NewGigaChatAiAPI(f.cfg.GigaChat.APIKey, f.cfg.GigaChat.PromptsPath)
+			aiApi, err := gigachat_adapter.NewGigaChatAiAPI(f.cfg.GigaChat.APIKey, f.cfg.GigaChat.PromptsPath, f.logger)
 			if err != nil {
 				panic(err)
 			}

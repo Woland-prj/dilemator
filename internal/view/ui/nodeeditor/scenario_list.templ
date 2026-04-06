@@ -9,7 +9,7 @@ templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
 		for _, s := range node.Scenarios {
 			<button
 				key={ s.ID.String() }
-				class="btn btn-neutral btn-block"
+				class="btn btn-neutral w-full max-w-[8rem] truncate min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
 				hx-get={ fmt.Sprintf("/components/dilemma/editor?did=%s&nid=%s", dilemmaID.String(), s.ID.String()) }
 				hx-target="#content-container"
 				hx-swap="innerHTML"
@@ -18,7 +18,7 @@ templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
 			</button>
 		}
 		<button
-			class={ fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil)) }
+			class={ fmt.Sprintf("btn btn-primary w-full max-w-[8rem] %s", getDisabledClass(node.ID == uuid.Nil)) }
 			hx-get={ fmt.Sprintf("/components/dilemma/editor?did=%s&pid=%s", dilemmaID.String(), node.ID.String()) }
 			hx-target="#content-container"
 			hx-swap="innerHTML"
@@ -39,7 +39,7 @@ templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
 			</svg>
 		</button>
 		<button
-			class={ fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil)) }
+			class={ fmt.Sprintf("btn btn-secondary w-full max-w-[8rem] %s", getDisabledClass(node.ID == uuid.Nil)) }
 			hx-post={ fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s&ai=true", dilemmaID.String(), node.ID.String()) }
 			hx-target="#content-container"
 			hx-swap="innerHTML"
@@ -58,6 +58,7 @@ templ ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) {
 					d="M12 4v16m8-8H4"
 				></path>
 			</svg>
+			Use AI
 		</button>
 	</div>
 }

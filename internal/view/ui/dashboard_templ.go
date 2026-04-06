@@ -31,13 +31,17 @@ func Dashboard(models []dilemma_entity.Dilemma) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col px-6 py-8\"><h1 class=\"text-3xl font-bold mb-6\">Your Dilemmas</h1><div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6\"><!-- Карточка Add New Dilemma --><div class=\"card bg-base-100 text-base-content w-full border-dashed border-1 border-primary\"><div class=\"card-body items-center text-center justify-center\"><div class=\"card-actions justify-end\"><a class=\"btn btn-soft btn-primary btn-xl\" hx-boost=\"true\" href=\"/editor\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" id=\"plus\"><g fill=\"none\" fill-rule=\"evenodd\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M8 1v14M1 8h14\"></path></g></svg></a></div></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		if len(models) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6 animate-fade-in\"><div class=\"flex flex-col items-center space-y-4 bg-base-200 rounded-2xl p-10 shadow-sm border border-base-300\"><!-- SVG-иллюстрация --><h2 class=\"text-2xl font-semibold text-primary-content\">No dilemmas yet</h2><p class=\"text-secondary-content max-w-md\">Start by creating your first dilemma and explore how others might respond.</p><a class=\"btn btn-primary btn-wide\" href=\"/editor\" hx-boost=\"true\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5 mr-2\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg> Add Dilemma</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<!-- Пустой список --> <div class=\"col-span-full flex flex-col items-center justify-center text-center space-y-6 py-12\"><h2 class=\"text-2xl font-semibold text-secondary-content\">No dilemmas yet</h2><p class=\"text-secondary-content max-w-md\">Start by creating your first dilemma and explore how others might respond.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-wrap items-start gap-8 animate-fade-in\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Существующие дилеммы -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -47,10 +51,10 @@ func Dashboard(models []dilemma_entity.Dilemma) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		return nil
 	})

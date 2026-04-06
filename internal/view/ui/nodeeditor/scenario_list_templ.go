@@ -51,7 +51,7 @@ func ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) templ.Co
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"btn btn-neutral btn-block\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"btn btn-neutral w-full max-w-[8rem] truncate min-w-0 whitespace-nowrap overflow-hidden text-ellipsis\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -82,7 +82,7 @@ func ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) templ.Co
 				return templ_7745c5c3_Err
 			}
 		}
-		var templ_7745c5c3_Var5 = []any{fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil))}
+		var templ_7745c5c3_Var5 = []any{fmt.Sprintf("btn btn-primary w-full max-w-[8rem] %s", getDisabledClass(node.ID == uuid.Nil))}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -117,7 +117,7 @@ func ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) templ.Co
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 = []any{fmt.Sprintf("btn btn-primary btn-block %s", getDisabledClass(node.ID == uuid.Nil))}
+		var templ_7745c5c3_Var8 = []any{fmt.Sprintf("btn btn-secondary w-full max-w-[8rem] %s", getDisabledClass(node.ID == uuid.Nil))}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var8...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -140,15 +140,15 @@ func ScenarioList(dilemmaID uuid.UUID, node dilemma_entity.DilemmaNode) templ.Co
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/dilemma?did=%s&pid=%s&ai=true", dilemmaID.String(), node.ID.String()))
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/api/dilemma/node?did=%s&pid=%s&ai=true", dilemmaID.String(), node.ID.String()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/scenario_list.templ`, Line: 43, Col: 100}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/ui/nodeeditor/scenario_list.templ`, Line: 43, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-target=\"#content-container\" hx-swap=\"innerHTML\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-target=\"#content-container\" hx-swap=\"innerHTML\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"></path></svg> Use AI</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

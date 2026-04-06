@@ -177,6 +177,14 @@ func (s *dilemmaService) GetByOwner(
 		return nil, berrors.InternalFromErr(op, err)
 	}
 
+	for _, dilemma := range dilemmas {
+		// Ссылка на изображение
+		dilemma.RootNode.Image, err = s.getImageLink(ctx, dilemma.RootNode.Image)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return dilemmas, nil
 }
 

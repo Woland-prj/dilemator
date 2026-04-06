@@ -7,7 +7,7 @@ import "fmt"
 templ Editor(menu ui.MenuProps, did string) {
 	@layout.Base(layout.BaseProps{Title: "Dilemator - editing", Menu: menu, DrawUserBage: true}) {
 		<div
-			class="container mx-auto md:px-20"
+			class="container mx-auto"
 			hx-get={ fmt.Sprintf("/components/dilemma/editor?did=%s", did) }
 			hx-target="#content-container"
 			hx-swap="innerHTML"

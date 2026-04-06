@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/Woland-prj/dilemator/internal/domain/entity/dilemma_entity"
 	"github.com/Woland-prj/dilemator/internal/domain/errors/berrors"
+	"github.com/Woland-prj/dilemator/pkg/logger"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 )
 
@@ -23,6 +26,7 @@ const (
 )
 
 type GigaChatAiAPI struct {
+	log        logger.Interface
 	apiKey     string
 	httpClient *http.Client
 	prompts    *Prompts
@@ -33,13 +37,14 @@ type Prompts struct {
 	UserPromptTemplate string `json:"user_prompt_template"`
 }
 
-func NewGigaChatAiAPI(apiKey, promptsPath string) (*GigaChatAiAPI, error) {
+func NewGigaChatAiAPI(apiKey, promptsPath string, log logger.Interface) (*GigaChatAiAPI, error) {
 	prompts, err := loadPrompts(promptsPath)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GigaChatAiAPI{
+		log:    log,
 		apiKey: apiKey,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
@@ -48,7 +53,6 @@ func NewGigaChatAiAPI(apiKey, promptsPath string) (*GigaChatAiAPI, error) {
 	}, nil
 }
 
-// GenerateNode генерирует новую ноду, используя ВСЮ цепочку родителей
 func (a *GigaChatAiAPI) GenerateNode(
 	ctx context.Context,
 	parentNode *dilemma_entity.DilemmaNode,
@@ -79,6 +83,8 @@ func (a *GigaChatAiAPI) GenerateNode(
 		},
 		Temperature: 0.7,
 	}
+
+	log.Debug("AI gigachat req body", slog.Any("body", reqBody))
 
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
@@ -126,7 +132,6 @@ func (a *GigaChatAiAPI) GenerateNode(
 
 	content := completionResp.Choices[0].Message.Content
 
-	// строго ожидаем JSON
 	var dto struct {
 		Name  string `json:"name"`
 		Value string `json:"value"`
@@ -188,7 +193,6 @@ func (a *GigaChatAiAPI) getAccessToken(ctx context.Context) (string, error) {
 	return authResp.AccessToken, nil
 }
 
-// buildUserPrompt строит prompt на основе ВСЕЙ цепочки родителей
 func (a *GigaChatAiAPI) buildUserPrompt(
 	node *dilemma_entity.DilemmaNode,
 ) (string, error) {
@@ -213,7 +217,6 @@ type NodeContext struct {
 	Value string
 }
 
-// от корня → к текущей ноде
 func buildContextChain(node *dilemma_entity.DilemmaNode) []NodeContext {
 	var chain []NodeContext
 

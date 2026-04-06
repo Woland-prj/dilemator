@@ -44,7 +44,7 @@ func Platform(menu ui.MenuProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"container mx-auto md:px-20\" hx-get=\"/components/dilemma/dashboard\" hx-swap=\"innerHTML\" hx-trigger=\"load\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"container mx-auto\" hx-get=\"/components/dilemma/dashboard\" hx-swap=\"innerHTML\" hx-trigger=\"load\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

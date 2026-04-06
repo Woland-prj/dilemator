@@ -10,13 +10,13 @@ type BaseProps struct {
 
 templ Base(props BaseProps) {
 	<!DOCTYPE html>
-	<html data-theme="bumblebee" lang="en">
+	<html data-theme="light" lang="en" class="min-h-screen">
 		<head>
 			<title>{ props.Title }</title>
 			<link rel="stylesheet" href="/assets/main.css"/>
 			<link rel="icon" href="/assets/favicon.ico" type="image/x-icon"/>
 		</head>
-		<body>
+		<body class="bg-base-200 min-h-screen">
 			@ui.Header(props.Menu, props.DrawUserBage)
 			<div id="content-container">
 				{ children... }
