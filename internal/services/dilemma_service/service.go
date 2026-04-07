@@ -87,16 +87,19 @@ func (s *dilemmaService) CreateDilemma(
 	const op = "dilemma - dilemmaService - CreateDilemma"
 
 	// Сохраняем изображение
-	imgKey, err := s.saveImage(
-		ctx,
-		req.RootImage.Data,
-		req.RootImage.ContentType,
-	)
-	if err != nil {
-		return nil, err
-	}
+	var imgKey *string
+	if req.RootImage != nil {
+		imgKey, err := s.saveImage(
+			ctx,
+			req.RootImage.Data,
+			req.RootImage.ContentType,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	s.log.Debug("saved image", slog.Any("key", imgKey))
+		s.log.Debug("saved image", slog.Any("key", imgKey))
+	}
 
 	rootNode := dilemma_entity.NewDilemmaNode(
 		uuid.New(),
@@ -127,6 +130,7 @@ func (s *dilemmaService) CreateDilemma(
 	}
 
 	// Получаем ссылку для отображения
+	var err error
 	dilemma.RootNode.Image, err = s.getImageLink(ctx, dilemma.RootNode.Image)
 	if err != nil {
 		return nil, err
@@ -276,13 +280,16 @@ func (s *dilemmaService) CreateDilemmaNode(
 	}
 
 	// Сохраеяем изображение
-	imgKey, err := s.saveImage(
-		ctx,
-		req.Image.Data,
-		req.Image.ContentType,
-	)
-	if err != nil {
-		return nil, err
+	var imgKey *string
+	if req.Image != nil {
+		imgKey, err = s.saveImage(
+			ctx,
+			req.Image.Data,
+			req.Image.ContentType,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	node := dilemma_entity.NewDilemmaNode(
