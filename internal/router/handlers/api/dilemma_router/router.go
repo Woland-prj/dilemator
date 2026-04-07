@@ -549,9 +549,7 @@ func (c *DilemmaController) validate(s interface{}, ctx *fiber.Ctx, op string) e
 func readFile(c *fiber.Ctx, fieldname string) (*dilemma_dto.FileDto, error) {
 	file, err := c.FormFile(fieldname)
 	if err != nil {
-		return nil, responses.ErrorResponse(
-			c, http.StatusBadRequest,
-			"BAD_REQUEST", "no file present")
+		return nil, nil
 	}
 
 	openedFile, err := file.Open()

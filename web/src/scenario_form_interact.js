@@ -4,6 +4,7 @@ if (form) {
   const nameInput = form.querySelector('input[name="name"]');
   const descTextarea = form.querySelector('textarea[name="value"]');
   const submitButton = form.querySelector('button[type="submit"]');
+  const fileInput = form.querySelector('input[name="image"]');
 
   if (!submitButton || !nameInput || !descTextarea) return;
 
@@ -15,8 +16,9 @@ if (form) {
     const topicChanged = topicInput ? topicInput.value !== topicInit : false;
     const nameChanged = nameInput.value !== nameInit;
     const descChanged = descTextarea.value !== descInit;
+    const fileChanged = fileInput ? fileInput.files.length > 0 : false;
 
-    if (topicChanged || nameChanged || descChanged) {
+    if (topicChanged || nameChanged || descChanged || fileChanged) {
       submitButton.classList.remove("btn-disabled");
     } else {
       submitButton.classList.add("btn-disabled");
@@ -53,4 +55,6 @@ if (form) {
     if (el) el.addEventListener("input", checkValidity);
     if (el) el.addEventListener("input", checkEmpty);
   });
+
+  if (fileInput) fileInput.addEventListener("change", checkValidity);
 }
